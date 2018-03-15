@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="com.arcsoft.sdk_demo_1"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- sdcard -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!-- wifi internet -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--android:name="android.support.multidex.MultiDexApplication"-->
+    <application
+        android:name="com.arcsoft.sdk_demo_1.Application"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+       >
+        <service android:name="com.ftp.FsService" />
+        <service android:name="com.ftp.NsdService" />
+        <receiver
+            android:name="com.ftp.NsdService$StartStopReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ftp.FTPSERVER_STARTED" />
+                <action android:name="com.ftp.FTPSERVER_STOPPED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.arcsoft.sdk_demo_1.BootBroadcastReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"></action>
+                <!--<category android:name="android.intent.category.Home" />-->
+            </intent-filter>
+        </receiver>
+        <!--
+        <receiver
+            android:name="com.arcsoft.sdk_demo_1.DetecterActivity$DetecterReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ftp.FTPSERVER_DETECT_STARTED" />
+            </intent-filter>
+        </receiver>-->
+        <activity android:name="com.arcsoft.sdk_demo_1.PermissionAcitivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity android:name="com.arcsoft.sdk_demo_1.RegisterActivity">
+        </activity>
+        <activity android:name="com.arcsoft.sdk_demo_1.DetecterActivity">
+        </activity>
+        <activity android:name="com.SQLite.SQLiteDemo">
+        </activity>
+        <activity android:name="com.http.CameraSetting">
+        </activity>
+        <activity android:name="com.arcsoft.sdk_demo_1.MainActivity">
+        </activity>
+        <activity android:name="com.ftp.ArcFtpActivity">
+        </activity>
+        <activity android:name="com.tcp.MainTcpActivity">
+        </activity>
+        <activity android:name="com.ftp.ArcFtpList">
+            <intent-filter>
+                <action android:name="com.ftp.ftplist"/>
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

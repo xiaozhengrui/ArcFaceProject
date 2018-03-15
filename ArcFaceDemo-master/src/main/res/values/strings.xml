@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">sdk_demo_1</string>
+    <string name="app_name_test">SQLite数据库操作实例</string>
+    <string name="button1">建立数据库表</string>
+    <string name="button2">删除数据库表</string>
+    <string name="button3">插入两条记录</string>
+    <string name="button4">删除一条记录</string>
+    <string name="button5">查看数据库表</string>
+
+</resources>
