@@ -25,7 +25,7 @@ public  class BootBroadcastReceiver extends BroadcastReceiver {
                 //warnIfNoExternalStorage();
                 //ContextWrapper cWrapper = new ContextWrapper(context);
                 Log.d(TAG, "startService");
-                //context.startService(serverService);
+                context.startService(serverService);
             }
         }
     }
