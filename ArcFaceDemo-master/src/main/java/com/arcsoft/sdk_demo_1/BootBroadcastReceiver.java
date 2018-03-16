@@ -20,7 +20,6 @@ public  class BootBroadcastReceiver extends BroadcastReceiver {
         if(intent.getAction().equals(ACTION)) {
             Intent serverService = new Intent(context, FsService.class);
             //serverService.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            Log.d(TAG, "startService11:"+FsService.isRunning());
             if (!FsService.isRunning()) {
                 //warnIfNoExternalStorage();
                 //ContextWrapper cWrapper = new ContextWrapper(context);

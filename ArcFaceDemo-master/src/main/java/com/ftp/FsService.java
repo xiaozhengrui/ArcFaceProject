@@ -6,14 +6,17 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.YuvImage;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,10 +26,12 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -66,6 +71,7 @@ import com.arcsoft.sdk_demo_1.PermissionAcitivity;
 import com.guo.android_extend.image.ImageConverter;
 import com.guo.android_extend.java.AbsLoop;
 import com.guo.android_extend.java.ExtByteArrayOutputStream;
+import com.media.MediaScanner;
 
 //import be.ppareit.swiftp.server.SessionThread;
 //import be.ppareit.swiftp.server.TcpListener;
@@ -97,6 +103,8 @@ public class FsService extends Service implements Runnable {
 
     byte[] mImageNV21 = null;
     byte[] mImageFtp = null;
+    int mFaceIndex=0;
+    List<AFT_FSDKFace> mAFT_FSDKFaceList = new ArrayList<>();
 
     AFT_FSDKFace mAFT_FSDKFace = null;
     FRAbsLoop mFRAbsLoop = null;
@@ -156,12 +164,46 @@ public class FsService extends Service implements Runnable {
                 return START_STICKY;
             }
         }
-        Log.d(TAG, "Creating server thread");
+        Log.d(TAG, "onStartCommand");
         serverThread = new Thread(this);
         serverThread.start();
         return START_STICKY;
     }
 
+
+    private String getImages() {
+        final String[] path = new String[1];
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Uri mImageUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                ContentResolver mContentResolver = FsService.this.getContentResolver();
+
+                //只查询jpeg的图片
+                Cursor mCursor = mContentResolver.query(mImageUri, null,
+                        MediaStore.Images.Media.MIME_TYPE + "=? or "
+                                + MediaStore.Images.Media.MIME_TYPE + "=?",
+                        new String[] { "image/jpeg" }, MediaStore.Images.Media.DATE_ADDED);
+
+                if(mCursor == null){
+                    return;
+                }
+
+                while (mCursor.moveToNext()) {
+                    //获取图片的路径
+                    path[0] = mCursor.getString(mCursor
+                            .getColumnIndex(MediaStore.Images.Media.DATA));
+
+                    //获取该图片的父路径名
+                    //String parentName = new File(path).getParentFile().getName();
+                }
+
+                mCursor.close();
+            }
+        }).start();
+        Log.d(TAG,"media store path:"+path[0]);
+        return path[0];
+    }
 
     /*public static class BootBroadcastReceiver extends BroadcastReceiver {
         private static final String TAG = "BootBroadcastReceiver";
@@ -285,15 +327,6 @@ public class FsService extends Service implements Runnable {
         sendBroadcast(new Intent(ACTION_STARTED));
 
 
-        /*while (!shouldExit) {
-            if (wifiListener == null) {
-                // Either our wifi listener hasn't been created yet, or has crashed,
-                // so spawn it
-                wifiListener = new TcpListener(listenSocket, this);
-                wifiListener.start();
-            }
-        }*/
-
         while (!shouldExit) {
             if (wifiListener != null) {
                 if (!wifiListener.isAlive()) {
@@ -304,21 +337,15 @@ public class FsService extends Service implements Runnable {
                     }
                     wifiListener = null;
                 }
-                //Log.d(TAG,"length:"+Environment.getExternalStorageDirectory().listFiles().length);
-                //Log.d(TAG,"fileCount:"+fileCount);
-                if(Environment.getExternalStorageDirectory().listFiles().length>fileCount){
-                    Log.d(TAG,"send detect started");
-                    fileCount = Environment.getExternalStorageDirectory().listFiles().length;
-                    //this.getApplicationContext().sendBroadcast(new Intent(ACTION_DETECT_STARTED));
-                    Object object = getFtpClientCurrentData();
-                }
             }
             if (wifiListener == null) {
                 // Either our wifi listener hasn't been created yet, or has crashed,
                 // so spawn it
+                Log.d(TAG,"new wifiListener");
                 wifiListener = new TcpListener(listenSocket, this);
                 wifiListener.start();
             }
+
             try {
                 // TODO: think about using ServerSocket, and just closing
                 // the main socket to send an exit signal
@@ -609,109 +636,125 @@ public class FsService extends Service implements Runnable {
         }).start();
     }
 
+   class FtpFaceImgGet implements Runnable
+   {
+       @Override
+       public void run() {
+           int width,height,i;
+           Bitmap bmp;
 
+           String[] file = Environment.getExternalStorageDirectory().list();
+           i = Environment.getExternalStorageDirectory().listFiles().length;
+
+           String filePath;
+           filePath = Environment.getExternalStorageDirectory()+"/"+file[i-1];
+           if(!filePath.contains(".jpg")){
+               return;
+           }
+           Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
+           long time = System.currentTimeMillis();
+           BitmapFactory.Options op = new BitmapFactory.Options();
+           op.inJustDecodeBounds = true;
+           BitmapFactory.decodeFile(filePath,op);
+           Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
+           op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
+           op.inJustDecodeBounds = false;
+           bmp = BitmapFactory.decodeFile(filePath,op);
+           Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
+           width = bmp.getWidth();
+           height = bmp.getHeight();
+
+           byte[] ImageData = new byte[width * height * 3 / 2];
+           ImageConverter convert = new ImageConverter();
+           convert.initial(width, height, ImageConverter.CP_PAF_NV21);
+           if (convert.convert(bmp, ImageData)) {
+               Log.d(TAG, "convert ok!");
+           }
+           convert.destroy();
+
+           Log.d(TAG,"time cost:"+(System.currentTimeMillis()-time)+"ms");
+           AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
+           Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
+           Log.d(TAG, "Face=" + result.size());
+           if(result.size() == 0){
+               Message msg = new Message();
+               msg.what = 0x002;
+               handler.sendMessage(msg);
+           }else{
+                   for (AFT_FSDKFace rt : result) {
+                       mAFT_FSDKFaceList.add(rt.clone());
+                   }
+                   mImageFtp = ImageData.clone();
+                   mWidth = width;
+                   mHeight = height;
+           }
+           for (AFT_FSDKFace face : result) {
+               Log.d(TAG, "Face:" + face.toString());
+           }
+       }
+   }
 
 
 
 
     public Object getFtpClientCurrentData(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int width,height,i;
-                Bitmap bmp;
-                ByteArrayOutputStream baos;
-                try {
-                    String[] file = Environment.getExternalStorageDirectory().list();
-                    /*for(i=0;i<file.length;i++){
-                        Log.d(TAG,"file:"+file[i]);
-                    }*/
-                    i = Environment.getExternalStorageDirectory().listFiles().length;
-                    //Log.d(TAG,"index: "+i);
+        /*Thread getBmpThread = new Thread(new FtpFaceImgGet());
+        getBmpThread.start();
+        try{
+            getBmpThread.join();
+        }catch(InterruptedException e){
+            e.printStackTrace();
+        }*/int width,height,i;
+        Bitmap bmp;
 
-                    String filePath;
-                    filePath = Environment.getExternalStorageDirectory()+"/"+file[i-1];
-                    if(!filePath.contains(".jpg")){
-                        return;
-                    }
-                    Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
-                    long time = System.currentTimeMillis();
-                    BitmapFactory.Options op = new BitmapFactory.Options();
-                    op.inJustDecodeBounds = true;
-                    BitmapFactory.decodeFile(filePath,op);
-                    Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
-                    op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
-                    op.inJustDecodeBounds = false;
-                    bmp = BitmapFactory.decodeFile(filePath,op);
-                    Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
-                    width = bmp.getWidth();
-                    height = bmp.getHeight();
-                    /*baos = new ByteArrayOutputStream();
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                    byte[] ImageData = baos.toByteArray();*/
+        String[] file = Environment.getExternalStorageDirectory().list();
+        i = Environment.getExternalStorageDirectory().listFiles().length;
 
-                    byte[] ImageData = new byte[width * height * 3 / 2];
-                    ImageConverter convert = new ImageConverter();
-                    convert.initial(width, height, ImageConverter.CP_PAF_NV21);
-                    if (convert.convert(bmp, ImageData)) {
-                        Log.d(TAG, "convert ok!");
-                    }
-                    convert.destroy();
+        String filePath;
+        filePath = Environment.getExternalStorageDirectory()+"/"+file[i-1];
+        if(!filePath.contains(".jpg")){
+            return null;
+        }
+        Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
+        long time = System.currentTimeMillis();
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(filePath,op);
+        Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
+        op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
+        op.inJustDecodeBounds = false;
+        bmp = BitmapFactory.decodeFile(filePath,op);
+        Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
+        width = bmp.getWidth();
+        height = bmp.getHeight();
 
-                    Log.d(TAG,"time cost:"+(System.currentTimeMillis()-time)+"ms");
-                    AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
-                    //follow use bitmap to yuv
-                    /*bmp = Application.decodeImage(filePath);
-                    if (bmp == null || bmp.getWidth() <= 0 || bmp.getHeight() <= 0 ) {
-                        Log.e(TAG, "error");
-                        //continue;
-                    } else {
-                        Log.i(TAG, "bmp width:" + bmp.getWidth() + " bmp height:" + bmp.getHeight());
-                    }
+        byte[] ImageData = new byte[width * height * 3 / 2];
+        ImageConverter convert = new ImageConverter();
+        convert.initial(width, height, ImageConverter.CP_PAF_NV21);
+        if (convert.convert(bmp, ImageData)) {
+            Log.d(TAG, "convert ok!");
+        }
+        convert.destroy();
 
-                    baos = new ByteArrayOutputStream();
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                    //mImageFtp = baos.toByteArray();
-                    width = bmp.getWidth();
-                    height = bmp.getHeight();
-                    byte[] YuvData = getYUV420sp(width,height,bmp);
-                    Log.d(TAG, "getYUV420sp");
-                    AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(YuvData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);*/
-                    Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
-                    Log.d(TAG, "Face=" + result.size());
-                    if(result.size() == 0){
-                        Message msg = new Message();
-                        msg.what = 0x002;
-                        handler.sendMessage(msg);
-                        /*Looper.prepare();
-                        Toast.makeText(FsService.this,"未检测到人脸",Toast.LENGTH_SHORT).show();
-                        Looper.loop();*/
-                    }else{
-                        mImageFtp = ImageData;//YuvData;
-                        mWidth = width;
-                        mHeight = height;
-                    }
-                    for (AFT_FSDKFace face : result) {
-                        Log.d(TAG, "Face:" + face.toString());
-                    }
-                    if (mImageNV21 == null) {
-                        if (!result.isEmpty()) {
-                            mAFT_FSDKFace = result.get(0).clone();//ftpFaceList.add(result.get(0).clone());
-                            if(mImageFtp != null) {
-                                Log.d(TAG,"clone ok");
-                                mImageNV21 = mImageFtp.clone();//ftpListData.add(mImageFtp.clone());
-                                //break;
-                            }
-                        }
-                    }
-                    //baos.close();
-                    //}
-                }catch(Exception e){
-                    e.printStackTrace();
-                }
-
+        Log.d(TAG,"time cost:"+(System.currentTimeMillis()-time)+"ms");
+        AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
+        Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
+        Log.d(TAG, "Face=" + result.size());
+        if(result.size() == 0){
+            Message msg = new Message();
+            msg.what = 0x002;
+            handler.sendMessage(msg);
+        }else{
+            for (AFT_FSDKFace rt : result) {
+                mAFT_FSDKFaceList.add(rt.clone());
             }
-        }).start();
+            mImageFtp = ImageData.clone();
+            mWidth = width;
+            mHeight = height;
+        }
+        for (AFT_FSDKFace face : result) {
+            Log.d(TAG, "Face:" + face.toString());
+        }
         return null;
     }
 
@@ -753,11 +796,24 @@ public class FsService extends Service implements Runnable {
             Log.d(TAG, "FR=" + version.toString() + "," + error.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
         }
 
-        //Object object = getFtpClientCurrentData();
 
         @Override
         public void loop() {
-            int i;
+            if(Environment.getExternalStorageDirectory().listFiles().length>fileCount){
+                Log.d(TAG,"send detect started");
+                fileCount = Environment.getExternalStorageDirectory().listFiles().length;
+                //this.getApplicationContext().sendBroadcast(new Intent(ACTION_DETECT_STARTED));
+                Object object = getFtpClientCurrentData();
+            }
+            if(mAFT_FSDKFaceList.size()> mFaceIndex){
+                mImageNV21 = mImageFtp.clone();
+                mAFT_FSDKFace = mAFT_FSDKFaceList.get(mFaceIndex).clone();
+                mFaceIndex++;
+                if(mFaceIndex == mAFT_FSDKFaceList.size()){
+                    mAFT_FSDKFaceList.clear();
+                    mFaceIndex = 0;
+                }
+            }
             if (mImageNV21 != null) {
                 long time = System.currentTimeMillis();
                 Log.d(TAG,"AFR_FSDK_ExtractFRFeature is ok");
@@ -809,10 +865,8 @@ public class FsService extends Service implements Runnable {
                     final float max_score = max;
                     Log.d(TAG, "fit Score:" + max + ", NAME:" + name);
                     final String mNameShow = name;
-                    //Looper.prepare();
-                    //Toast.makeText(FsService.this.getApplicationContext(),"姓名"+mNameShow+"置信度："+ (float) ((int) (max_score * 1000)) / 1000.0 ,Toast.LENGTH_SHORT).show();
-                    //Handler mHandler = new Handler();
-                    //mHandler.getLooper().quit();
+                    mAFT_FSDKFaceList.clear();//clear face list when checked!!
+                    mFaceIndex =  0;
                     Message msg = new Message();
                     msg.what = 0x001;
                     Bundle bd = new Bundle();
