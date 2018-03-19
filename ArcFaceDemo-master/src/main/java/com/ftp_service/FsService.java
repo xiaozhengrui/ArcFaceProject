@@ -26,6 +26,7 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -108,7 +109,7 @@ public class FsService extends Service implements Runnable {
     public static final int WAKE_INTERVAL_MS = 1000; // milliseconds
     private static final String FTP_SERVICE_TYPE= "_ftp._tcp.";
     //private NsdManager mNsdManager = null;
-
+    private static boolean ftpModifyOk = false;
     private TcpListener wifiListener = null;
     private final List<SessionThread> sessionThreads = new ArrayList<SessionThread>();
     private static int fileCount;
@@ -119,7 +120,7 @@ public class FsService extends Service implements Runnable {
         Log.d(TAG,"service onCreate");
         fileCount = Environment.getExternalStorageDirectory().listFiles().length;
         //start detect when receive broadcast,so mark it
-        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 5);
+        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
         Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
         err = engine.AFT_FSDK_GetVersion(version);
         Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
@@ -133,9 +134,6 @@ public class FsService extends Service implements Runnable {
         Log.d(TAG, "ASGE_FSDK_InitgGenderEngine =" + error1.getCode());
         error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
         Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
-        //getFaceDB();
-        mFRAbsLoop = new FRAbsLoop();
-        mFRAbsLoop.start();
     }
 
     @Override
@@ -271,7 +269,8 @@ public class FsService extends Service implements Runnable {
     @Override
     public void run() {
         Log.d(TAG, "Server thread running");
-
+        mFRAbsLoop = new FRAbsLoop();
+        mFRAbsLoop.start();
         /*if (isConnectedToLocalNetwork() == false) {
             Log.w(TAG, "run: There is no local network, bailing out");
             stopSelf();
@@ -607,82 +606,26 @@ public class FsService extends Service implements Runnable {
         }).start();
     }
 
-   class FtpFaceImgGet implements Runnable
-   {
-       @Override
-       public void run() {
-           int width,height,i;
-           Bitmap bmp;
 
-           String[] file = Environment.getExternalStorageDirectory().list();
-           i = Environment.getExternalStorageDirectory().listFiles().length;
-
-           String filePath;
-           filePath = Environment.getExternalStorageDirectory()+"/"+file[i-1];
-           if(!filePath.contains(".jpg")){
-               return;
-           }
-           Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
-
-           BitmapFactory.Options op = new BitmapFactory.Options();
-           op.inJustDecodeBounds = true;
-           BitmapFactory.decodeFile(filePath,op);
-           Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
-           op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
-           op.inJustDecodeBounds = false;
-           bmp = BitmapFactory.decodeFile(filePath,op);
-           Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
-           width = bmp.getWidth();
-           height = bmp.getHeight();
-
-           byte[] ImageData = new byte[width * height * 3 / 2];
-           ImageConverter convert = new ImageConverter();
-           convert.initial(width, height, ImageConverter.CP_PAF_NV21);
-           if (convert.convert(bmp, ImageData)) {
-               Log.d(TAG, "convert ok!");
-           }
-           convert.destroy();
-
-           Log.d(TAG,"time cost:"+(System.currentTimeMillis()-time)+"ms");
-           AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
-           Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
-           Log.d(TAG, "Face=" + result.size());
-           if(result.size() == 0){
-               Message msg = new Message();
-               msg.what = 0x002;
-               handler.sendMessage(msg);
-           }else{
-                   for (AFT_FSDKFace rt : result) {
-                       mAFT_FSDKFaceList.add(rt.clone());
-                   }
-                   mImageFtp = ImageData.clone();
-                   mWidth = width;
-                   mHeight = height;
-           }
-           for (AFT_FSDKFace face : result) {
-               Log.d(TAG, "Face:" + face.toString());
-           }
-       }
-   }
+    private void FtpPathScan(String scanPath){
+        File scanFile = new File(scanPath);
+        if(scanFile.listFiles().length>fileCount && ftpModifyOk){
+            ftpModifyOk = false;
+            time = System.currentTimeMillis();
+            Log.d(TAG,"FtpPathScan Start");
+            fileCount = scanFile.listFiles().length;
+            String[] file = scanFile.list();
+            String filePath;
+            filePath = scanFile+"/"+file[fileCount-1];
+            Object object = getFtpClientCurrentData(filePath);
+        }
+    }
 
 
-
-
-    public Object getFtpClientCurrentData(){
-        /*Thread getBmpThread = new Thread(new FtpFaceImgGet());
-        getBmpThread.start();
-        try{
-            getBmpThread.join();
-        }catch(InterruptedException e){
-            e.printStackTrace();
-        }*/int width,height,i;
+    public Object getFtpClientCurrentData(String filePath){
+        int width,height;
         Bitmap bmp;
 
-        String[] file = Environment.getExternalStorageDirectory().list();
-        i = Environment.getExternalStorageDirectory().listFiles().length;
-
-        String filePath;
-        filePath = Environment.getExternalStorageDirectory()+"/"+file[i-1];
         if(!filePath.contains(".jpg")){
             return null;
         }
@@ -707,7 +650,12 @@ public class FsService extends Service implements Runnable {
         }
         convert.destroy();
 
-        AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
+        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
+        Log.d(TAG, "AFT_FSDK_InitialFaceEngine2 =" + err.getCode());
+        err = engine.AFT_FSDK_GetVersion(version);
+        Log.d(TAG, "AFT_FSDK_GetVersion2:" + version.toString() + "," + err.getCode());
+
+        err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
         Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
         Log.d(TAG, "Face=" + result.size());
         if(result.size() == 0){
@@ -723,6 +671,8 @@ public class FsService extends Service implements Runnable {
             mWidth = width;
             mHeight = height;
         }
+        AFT_FSDKError error = engine.AFT_FSDK_UninitialFaceEngine();
+        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine2 : " + error.getCode());
         for (AFT_FSDKFace face : result) {
             Log.d(TAG, "Face:" + face.toString());
         }
@@ -761,25 +711,20 @@ public class FsService extends Service implements Runnable {
 
         @Override
         public void setup() {
+            Log.d(TAG,"FsService setup");
             AFR_FSDKError error = engine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
             Log.d(TAG, "AFR_FSDK_InitialEngine = " + error.getCode());
 
             error = engine.AFR_FSDK_GetVersion(version);
             Log.d(TAG, "FR=" + version.toString() + "," + error.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
-            Application app = (Application) FsService.this.getApplicationContext();
-            app.mFaceDB.loadFaces();
+            getFaceDB();
         }
 
 
 
         @Override
         public void loop() {
-            if(Environment.getExternalStorageDirectory().listFiles().length>fileCount){
-                time = System.currentTimeMillis();
-                Log.d(TAG,"send detect started");
-                fileCount = Environment.getExternalStorageDirectory().listFiles().length;
-                Object object = getFtpClientCurrentData();
-            }
+            FtpPathScan(Environment.getExternalStorageDirectory().toString());
             if(mAFT_FSDKFaceList.size()> mFaceIndex){
                 mImageNV21 = mImageFtp.clone();
                 mAFT_FSDKFace = mAFT_FSDKFaceList.get(mFaceIndex).clone();
@@ -865,15 +810,16 @@ public class FsService extends Service implements Runnable {
 
         @Override
         public void over() {
+            Log.d(TAG,"FsService over!");
             AFR_FSDKError error = engine.AFR_FSDK_UninitialEngine();
             Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
         }
     }
 
 
-    private Handler handler = new Handler() {
+    private  Handler handler = new Handler(new Handler.Callback() {
         @Override
-        public void handleMessage(Message msg) {
+        public boolean handleMessage(Message msg) {
             if (msg.what == 0x001) {
                 Log.d(TAG,"check face successful!");
                 String name = msg.getData().getString("name");
@@ -882,6 +828,19 @@ public class FsService extends Service implements Runnable {
             }else if(msg.what == 0x002){
                 Toast.makeText(FsService.this,"未检测到人脸",Toast.LENGTH_SHORT).show();
             }
+            return false;
         }
-    };
+    });
+
+
+    public static Handler mHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            if(msg.what == 0x003){
+                ftpModifyOk = true;
+                Log.d(TAG,"session close,start to img scan!");
+            }
+            return false;
+        }
+    });
 }

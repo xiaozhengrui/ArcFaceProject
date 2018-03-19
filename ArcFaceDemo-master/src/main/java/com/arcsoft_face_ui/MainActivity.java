@@ -1,6 +1,7 @@
 package com.arcsoft_face_ui;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -26,6 +27,10 @@ import com.http_service.HttpUtils;
 import com.http_service.CameraSetting;
 
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,7 +61,40 @@ public class MainActivity extends Activity implements OnClickListener {
 		v.setOnClickListener(this);
 	}
 
-
+	public static int getNumberOfCPUCores() {
+		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.GINGERBREAD_MR1) {
+			// Gingerbread doesn't support giving a single application access to both cores, but a
+			// handful of devices (Atrix 4G and Droid X2 for example) were released with a dual-core
+			// chipset and Gingerbread; that can let an app in the background run without impacting
+			// the foreground application. But for our purposes, it makes them single core.
+			return 1;
+		}
+		int cores;
+		try {
+			cores = new File("/sys/devices/system/cpu/").listFiles(CPU_FILTER).length;
+		} catch (SecurityException e) {
+			cores = 0;
+		} catch (NullPointerException e) {
+			cores = 0;
+		}
+		return cores;
+	}
+	private static final FileFilter CPU_FILTER = new FileFilter() {
+		@Override
+		public boolean accept(File pathname) {
+			String path = pathname.getName();
+			//regex is slow, so checking char by char.
+			if (path.startsWith("cpu")) {
+				for (int i = 3; i < path.length(); i++) {
+					if (path.charAt(i) < '0' || path.charAt(i) > '9') {
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+	};
 
 	/* (non-Javadoc)
 	 * @see android.app.Activity#onDestroy()
@@ -125,7 +163,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				}
 				break;
 			case R.id.button3:
-					Thread td = new Thread(new Runnable() {
+					/*Thread td = new Thread(new Runnable() {
 						@Override
 						public void run() {
 							HttpUtils httpUtils = new HttpUtils();
@@ -138,7 +176,8 @@ public class MainActivity extends Activity implements OnClickListener {
 							MainActivity.this.startActivity(new Intent(MainActivity.this,CameraSetting.class));
 						}
 					});
-					td.start();
+					td.start();*/
+					Log.d(TAG,"CPU Cores number:"+getNumberOfCPUCores());
 				break;
 			case R.id.button2:
 				if( ((Application)getApplicationContext()).mFaceDB.mRegister.isEmpty() ) {

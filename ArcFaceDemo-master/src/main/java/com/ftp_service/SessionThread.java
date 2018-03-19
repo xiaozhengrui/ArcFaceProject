@@ -24,6 +24,8 @@ along with SwiFTP.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
@@ -237,12 +239,13 @@ public class SessionThread extends Thread {
         Log.d(TAG,"SessionThread started");
         // Give client a welcome
         if (sendWelcomeBanner) {
-            writeString("220 SwiFTP " /*+ App.getVersion()*/ + " ready\r\n");
+            writeString("220 ArcFace FTP " /*+ App.getVersion()*/ + " ready\r\n");
         }
         // Main loop: read an incoming line and process it
         try {
             final Reader reader = new InputStreamReader(cmdSocket.getInputStream());
             Log.d(TAG,"cmdSocket.getLocalAddress():"+cmdSocket.getLocalAddress().toString());
+            Log.d(TAG,"cmdSocket.getLocalPort():"+cmdSocket.getLocalPort());
             final BufferedReader in = new BufferedReader(reader, 8192); // use 8k buffer
             while (true) {
                 String line;
@@ -253,6 +256,7 @@ public class SessionThread extends Thread {
                 } else {
                     Log.d(TAG, "session cost :" + (System.currentTimeMillis() - time) + "ms");
                     Log.d(TAG,"readLine gave null, quitting");
+                    FsService.mHandler.sendEmptyMessage(0x003);
                     break;
                 }
             }
@@ -261,6 +265,8 @@ public class SessionThread extends Thread {
         }
         closeSocket();
     }
+
+
 
     public void closeSocket() {
         if (cmdSocket == null) {

@@ -41,6 +41,7 @@ public class LocalDataSocket {
     private boolean isPasvMode = true;
 
     public LocalDataSocket() {
+        Log.d(TAG,"LocalDataSocket first clearStare");
         clearState();
     }
 

@@ -42,6 +42,7 @@ public class TcpListener extends Thread {
     public void quit() {
         try {
             listenSocket.close(); // if the TcpListener thread is blocked on accept,
+            Log.d(TAG,"listenSocket close");
             // closing the socket will raise an exception
         } catch (Exception e) {
             Log.d(TAG, "Exception closing TcpListener listenSocket");
@@ -54,8 +55,7 @@ public class TcpListener extends Thread {
             while (true) {
                 Socket clientSocket = listenSocket.accept();
                 Log.i(TAG, "New connection, spawned thread");
-                Log.d(TAG,"clientSocket ip1:"+clientSocket.getLocalAddress().toString());
-                Log.d(TAG,"clientSocket ip2:"+clientSocket.getInetAddress().toString());
+                Log.d(TAG,"clientSocket ip:"+clientSocket.getInetAddress().toString());
                 SessionThread newSession = new SessionThread(clientSocket, new LocalDataSocket());
                 newSession.start();
                 ftpServerService.registerSessionThread(newSession);
