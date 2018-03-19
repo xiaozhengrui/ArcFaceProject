@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.arcsoft.sdk_demo_1.MainActivity" >
+    tools:context="com.arcsoft_face_ui.MainActivity" >
 
     <!-- ip地址 -->
 

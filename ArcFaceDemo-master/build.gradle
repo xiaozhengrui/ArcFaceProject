@@ -4,8 +4,8 @@ android {
     compileSdkVersion 24
     buildToolsVersion "26.0.2"
     defaultConfig {
-        applicationId "com.arcsoft.sdk_demo_1"
-        multiDexEnabled true
+        applicationId "com.arcsoft_face_ui"
+        //multiDexEnabled true
         minSdkVersion 19
         targetSdkVersion 24
         versionCode 1
@@ -35,6 +35,6 @@ dependencies {
     compile files('libs/ageestimation.jar')
     compile files('libs/genderestimation.jar')
     compile 'com.guo.android_extend:android-extend:1.0.1'
-    compile 'com.android.support:multidex:1.0.1'
+    //compile 'com.android.support:multidex:1.0.1'
     implementation files('libs/commons-lang3-3.7.jar')
 }
