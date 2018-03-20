@@ -14,10 +14,22 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
+    signingConfigs {
+        davidConfig {
+            keyAlias 'key0'
+            keyPassword 'xiaomao85823'
+            storeFile file('/home/techwinxiao/android/sign_save/arcFaceDemoKey.jks')
+            storePassword 'xiaomao85823'
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.davidConfig
+        }
+        debug {
+            signingConfig signingConfigs.davidConfig
         }
     }
 

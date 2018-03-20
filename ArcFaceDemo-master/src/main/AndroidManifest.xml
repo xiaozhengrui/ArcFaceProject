@@ -38,6 +38,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"></action>
             </intent-filter>
         </receiver>
+
         <activity android:name="com.arcsoft_face_ui.PermissionAcitivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -58,6 +59,8 @@
             <intent-filter>
                 <action android:name="com.ftp.ftplist"/>
             </intent-filter>
+        </activity>
+        <activity android:name="com.apk_update.ApkDownLoad">
         </activity>
     </application>
 

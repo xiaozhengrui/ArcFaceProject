@@ -50,13 +50,13 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="camera set"
+            android:text="Update"
             android:textColor="@color/colorAccent"/>
         <Button
             android:id="@+id/button3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="摄像头设置" />
+            android:text="版本更新" />
     </LinearLayout>
 
     <LinearLayout
@@ -69,13 +69,13 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SQLite"
+            android:text="Start"
             android:textColor="@color/colorAccent"/>
         <Button
             android:id="@+id/SQLenter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="数据库操作" />
+            android:text="启动功能" />
     </LinearLayout>
 
 </RelativeLayout>

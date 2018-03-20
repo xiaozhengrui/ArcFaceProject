@@ -1,7 +1,6 @@
 package com.arcsoft_face_ui;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -21,18 +20,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 
+import com.apk_update.ApkDownLoad;
 import com.ftp_service.ArcFtpList;
 import com.ftp_service.FsService;
-import com.http_service.HttpUtils;
-import com.http_service.CameraSetting;
 
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class MainActivity extends Activity implements OnClickListener {
@@ -177,6 +171,8 @@ public class MainActivity extends Activity implements OnClickListener {
 						}
 					});
 					td.start();*/
+					startActivity(new Intent(this,ApkDownLoad.class));
+
 					Log.d(TAG,"CPU Cores number:"+getNumberOfCPUCores());
 				break;
 			case R.id.button2:
@@ -186,7 +182,7 @@ public class MainActivity extends Activity implements OnClickListener {
 					new AlertDialog.Builder(this)
 							.setTitle("请选择获取方式")
 							.setIcon(android.R.drawable.ic_dialog_info)
-							.setItems(new String[]{"后置相机", "前置相机","通过服务器比对"}, new DialogInterface.OnClickListener() {
+							.setItems(new String[]{"后置相机", "前置相机","本地图片"}, new DialogInterface.OnClickListener() {
 										@Override
 										public void onClick(DialogInterface dialog, int which) {
 											startDetector(which);
