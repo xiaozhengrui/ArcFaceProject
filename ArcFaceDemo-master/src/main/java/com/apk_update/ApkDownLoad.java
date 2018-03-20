@@ -1,9 +1,14 @@
 package com.apk_update;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -27,7 +32,27 @@ public class ApkDownLoad extends Activity{
     protected void onCreate(Bundle savedInstanceState) {
         // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
-        showDownloadProgressDialog(this);
+        String AppVersionName = getAPPVersionName(this);
+        String NewApkVersionName = getNewApkVersionName(this);
+        new AlertDialog.Builder(this)
+                .setTitle("确认版本信息，是否升级?"+" 当前版本:"+AppVersionName)
+                .setIcon(android.R.drawable.ic_dialog_info)
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        showDownloadProgressDialog(ApkDownLoad.this);
+                        dialog.dismiss();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        finish();
+                    }
+                })
+                .show();
+        //showDownloadProgressDialog(this);
     }
 
     @Override
@@ -49,6 +74,68 @@ public class ApkDownLoad extends Activity{
         new DownloadAPK(progressDialog).execute(downloadUrl);
     }
 
+    /**
+     * 获取apk的版本号 currentVersionCode
+     *
+     * @param ctx
+     * @return
+     */
+    public float getAPPVersionCode(Context ctx) {
+        float currentVersionCode = 0;
+        PackageManager manager = ctx.getPackageManager();
+        try {
+            PackageInfo info = manager.getPackageInfo(ctx.getPackageName(), 0);
+            currentVersionCode = info.versionCode; // 版本号
+            System.out.println(currentVersionCode + " " + currentVersionCode);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return currentVersionCode;
+    }
+
+
+    public String getAPPVersionName(Context ctx) {
+        String currentVersionName = null;
+        PackageManager manager = ctx.getPackageManager();
+        try {
+            PackageInfo info = manager.getPackageInfo(ctx.getPackageName(), 0);
+            currentVersionName = info.versionName; // 版本名
+            System.out.println(currentVersionName + " " + currentVersionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return currentVersionName;
+    }
+
+    public float getNewApkVersionCode(Context ctx){
+        float newVersionCode = 0;
+        String archiveFilePath=Environment.getExternalStorageDirectory().getPath() + "/arcFaceUpdate/ArcFaceDemo-master-release.apk";//安装包路径
+        PackageManager pm = ctx.getPackageManager();
+        PackageInfo info = pm.getPackageArchiveInfo(archiveFilePath, PackageManager.GET_ACTIVITIES);
+        if(info != null){
+            ApplicationInfo appInfo = info.applicationInfo;
+            String appName = pm.getApplicationLabel(appInfo).toString();
+            String packageName = appInfo.packageName;  //得到安装包名称
+            String version=info.versionName;       //得到版本信息
+            newVersionCode = info.versionCode;
+        }
+        return newVersionCode;
+    }
+
+
+    public String getNewApkVersionName(Context ctx){
+        String newVersionCodeName = null;
+        String archiveFilePath=Environment.getExternalStorageDirectory().getPath() + "/arcFaceUpdate/ArcFaceDemo-master-release.apk";//安装包路径
+        PackageManager pm = ctx.getPackageManager();
+        PackageInfo info = pm.getPackageArchiveInfo(archiveFilePath, PackageManager.GET_ACTIVITIES);
+        if(info != null){
+            ApplicationInfo appInfo = info.applicationInfo;
+            //String appName = pm.getApplicationLabel(appInfo).toString();
+            //String packageName = appInfo.packageName;  //得到安装包名称
+            newVersionCodeName=info.versionName;       //得到版本信息
+        }
+        return newVersionCodeName;
+    }
 
     private class DownloadAPK extends AsyncTask<String, Integer, String> {
         ProgressDialog progressDialog;
@@ -75,12 +162,18 @@ public class ApkDownLoad extends Activity{
                 bis = new BufferedInputStream(conn.getInputStream());
                 String fileName = Environment.getExternalStorageDirectory().getPath() + "/arcFaceUpdate/ArcFaceDemo-master-release.apk";
                 file = new File(fileName);
+                if(file != null && file.exists()){
+                    //delete old apk
+                    file.delete();
+                }
+
                 if (!file.exists()) {
                     if (!file.getParentFile().exists()) {
                         file.getParentFile().mkdirs();
                     }
                     file.createNewFile();
                 }
+
                 fos = new FileOutputStream(file);
                 byte data[] = new byte[70 * 1024];
                 long total = 0;

@@ -47,11 +47,11 @@ public class MainActivity extends Activity implements OnClickListener {
 		this.setContentView(R.layout.main_test);
 		View v = this.findViewById(R.id.button1);
 		v.setOnClickListener(this);
-		v = this.findViewById(R.id.button2);
-		v.setOnClickListener(this);
+		//v = this.findViewById(R.id.button2);
+		//v.setOnClickListener(this);
 		v = this.findViewById(R.id.button3);
 		v.setOnClickListener(this);
-		v = this.findViewById(R.id.SQLenter);
+		v = this.findViewById(R.id.StartService);
 		v.setOnClickListener(this);
 	}
 
@@ -142,8 +142,8 @@ public class MainActivity extends Activity implements OnClickListener {
 	public void onClick(View paramView) {
 		// TODO Auto-generated method stub
 		switch (paramView.getId()) {
-			case R.id.SQLenter:
-				Log.d(TAG,"start SQLite");
+			case R.id.StartService:
+				Log.d(TAG,"StartService");
 				/*Intent intent1 = new Intent().setClass(this, MainTcpActivity.class);
 				startActivity(intent1);*/
 				//startActivity(new Intent(this, SQLiteDemo.class));
@@ -152,8 +152,9 @@ public class MainActivity extends Activity implements OnClickListener {
 				if (!FsService.isRunning()) {
 					//warnIfNoExternalStorage();
 					//ContextWrapper cWrapper = new ContextWrapper(context);
-					Log.d(TAG, "startService22");
+					Log.d(TAG, "startService by human");
 					this.startService(serverService);
+					Toast.makeText(this,"人脸识别服务已启动",Toast.LENGTH_SHORT).show();
 				}
 				break;
 			case R.id.button3:
@@ -175,7 +176,7 @@ public class MainActivity extends Activity implements OnClickListener {
 
 					Log.d(TAG,"CPU Cores number:"+getNumberOfCPUCores());
 				break;
-			case R.id.button2:
+			/*case R.id.button2:
 				if( ((Application)getApplicationContext()).mFaceDB.mRegister.isEmpty() ) {
 					Toast.makeText(this, "没有注册人脸，请先注册！", Toast.LENGTH_SHORT).show();
 				} else {
@@ -190,7 +191,7 @@ public class MainActivity extends Activity implements OnClickListener {
 									})
 							.show();
 				}
-				break;
+				break;*/
 			case R.id.button1:
 				final Intent getImageByFtp = new Intent(this,ArcFtpList.class);
 				new AlertDialog.Builder(this)
