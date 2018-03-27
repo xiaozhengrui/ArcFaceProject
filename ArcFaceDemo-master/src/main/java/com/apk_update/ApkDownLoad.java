@@ -70,7 +70,7 @@ public class ApkDownLoad extends Activity{
         progressDialog.setCancelable(false);                    //设置不可点击界面之外的区域让对话框小时
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);         //进度条类型
         progressDialog.show();
-        String downloadUrl = "http://192.168.1.104:8008/ArcFaceDemo-master-release.apk"; //这里写你的apk url地址
+        String downloadUrl = "http://192.168.1.105:8008/ArcFaceDemo-master-release.apk"; //这里写你的apk url地址
         new DownloadAPK(progressDialog).execute(downloadUrl);
     }
 

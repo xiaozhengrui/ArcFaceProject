@@ -62,6 +62,7 @@ import com.arcsoft_face_ui.Application;
 import com.arcsoft_face_ui.FaceDB;
 import com.guo.android_extend.image.ImageConverter;
 import com.guo.android_extend.java.AbsLoop;
+import com.http_service.HttpFaceRegister;
 
 //import be.ppareit.swiftp.server.SessionThread;
 //import be.ppareit.swiftp.server.TcpListener;
@@ -602,6 +603,8 @@ public class FsService extends Service implements Runnable {
             public void run() {
                 Application app = (Application) FsService.this.getApplicationContext();
                 app.mFaceDB.loadFaces();
+                HttpFaceRegister register = new HttpFaceRegister(FsService.this);
+                register.getImageFromHttp();
             }
         }).start();
     }
