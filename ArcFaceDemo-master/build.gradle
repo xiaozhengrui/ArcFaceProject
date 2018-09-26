@@ -2,23 +2,26 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "26.0.2"
+    buildToolsVersion '27.0.3'
     defaultConfig {
-        applicationId "com.arcsoft_face_ui"
+        applicationId "com.arcsoft_face_ui_ztf"
         //multiDexEnabled true
         minSdkVersion 19
         targetSdkVersion 24
         versionCode 1
         versionName "1.2"
-        sourceSets.main {
-            jniLibs.srcDirs = ['libs']
-        }
+
+        ndk{
+            moduleName "GPIOControl" //so文件:lib+moduleName+.so
+            ldLibs "log", "z", "m" // 添加android日志引用
+            abiFilters "armeabi", "armeabi-v7a", "x86"//cpu的类型
+           }
     }
     signingConfigs {
         davidConfig {
             keyAlias 'key0'
             keyPassword 'xiaomao85823'
-            storeFile file('/home/techwinxiao/android/sign_save/arcFaceDemoKey.jks')
+            storeFile file('/home/ztf-xiao/Documents/workfiles/android_ztf_work/ArcFaceSignedKey/arcFaceKey.jks')
             storePassword 'xiaomao85823'
         }
     }
@@ -37,16 +40,20 @@ android {
         targetCompatibility 1.8
         sourceCompatibility 1.8
     }
+    sourceSets.main {
+        jni.srcDirs = []
+        jniLibs.srcDirs = ['libs']
+    }
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile files('libs/facedetection.jar')
-    compile files('libs/facerecognition.jar')
-    compile files('libs/facetracking.jar')
-    compile files('libs/ageestimation.jar')
-    compile files('libs/genderestimation.jar')
-    compile 'com.guo.android_extend:android-extend:1.0.1'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation files('libs/facedetection.jar')
+    implementation files('libs/facerecognition.jar')
+    implementation files('libs/facetracking.jar')
+    implementation files('libs/ageestimation.jar')
+    implementation files('libs/genderestimation.jar')
+    implementation 'com.guo.android_extend:android-extend:1.0.1'
     //compile 'com.android.support:multidex:1.0.1'
     implementation files('libs/commons-lang3-3.7.jar')
 }

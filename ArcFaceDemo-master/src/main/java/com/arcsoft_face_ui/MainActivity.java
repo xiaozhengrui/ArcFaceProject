@@ -23,10 +23,13 @@ import android.widget.Toast;
 import com.apk_update.ApkDownLoad;
 import com.ftp_service.ArcFtpList;
 import com.ftp_service.FsService;
+import com.gpio_ctrl.GPIOControl;
 
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 
 
 public class MainActivity extends Activity implements OnClickListener {
@@ -138,10 +141,104 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 	}
 
+
+	private void chmodWithOneFile(String fileName) {
+		Process p;
+		try {
+			p = Runtime.getRuntime().exec("chmod 644 " + fileName);
+			int status;
+			status = p.waitFor();
+			if (status == 0) {
+				Log.d(TAG, "ChangeMode success " + fileName);
+			} else {
+				Log.d(TAG, "ChangeMode failure " + fileName);
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+	}
+	}
+
+
+	private boolean RootCommand(String command) {
+		Process process = null;
+		DataOutputStream os = null;
+		try {
+			process = Runtime.getRuntime().exec("su");
+			os = new DataOutputStream(process.getOutputStream());
+			os.writeBytes(command + "\n");
+			os.writeBytes(command + "\n");
+			os.writeBytes("exit\n");
+			os.flush();
+			process.waitFor();
+		} catch (Exception e) {
+			return false;
+		} finally {
+			try {
+				if (os != null) {
+					os.close();
+				}
+				process.destroy();
+			} catch (Exception e) {
+			}
+		}
+		return true;
+	}
+
+	private void doSU() {
+		try {
+			Process process = Runtime.getRuntime().exec("su");// (这里执行是系统已经开放了root权限，而不是说通过执行这句来获得root权限)
+			DataOutputStream os = new DataOutputStream(process.getOutputStream());
+			os.writeBytes("\n");
+			os.flush();
+			//如果已经root，但是用户选择拒绝授权,e.getMessage() = write failed: EPIPE (Broken pipe)
+			//如果没有root，,e.getMessage()= Error running exec(). Command: [su] Working Directory: null Environment: null
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	@Override
 	public void onClick(View paramView) {
 		// TODO Auto-generated method stub
 		switch (paramView.getId()) {
+			case R.id.button3:
+				Toast.makeText(this,"button push 888",Toast.LENGTH_SHORT).show();
+				//doSU();
+				//RootCommand("chmod -R 777 /sys/class/gpio/export");
+				//GPIOControl.exportGpio(254);
+				Thread thread = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							RootCommand("echo 254 > /sys/class/gpio/export");
+							//RootCommand("echo out > /sys/class/gpio/gpio254/direction");
+
+							RootCommand("chmod -R 777 /sys/class/gpio/gpio254/direction");
+							GPIOControl.setGpioDirection(254,
+									GPIOControl.GPIO_DIRECTION_OUT);
+							boolean flag = true;
+							while (true){
+//								if(flag){
+//									RootCommand("echo 1 > /sys/class/gpio/gpio254/value");
+//								}else{
+//									RootCommand("echo 0 > /sys/class/gpio/gpio254/value");
+//								}
+								RootCommand("chmod -R 777 /sys/class/gpio/gpio254/value");
+								GPIOControl.writeGpioStatus(254, flag ? GPIOControl.GPIO_VALUE_HIGH : GPIOControl.GPIO_VALUE_LOW);
+								flag = !flag;
+								Thread.sleep(2000);
+							}
+							//GPIOControl.unexportGpio(254);
+						} catch (Exception ex){
+							ex.printStackTrace();
+						}
+					}
+				});
+				thread.start();
+				break;
 			case R.id.StartService:
 				Log.d(TAG,"StartService");
 				/*Intent intent1 = new Intent().setClass(this, MainTcpActivity.class);
@@ -157,7 +254,7 @@ public class MainActivity extends Activity implements OnClickListener {
 					Toast.makeText(this,"人脸识别服务已启动",Toast.LENGTH_SHORT).show();
 				}
 				break;
-			case R.id.button3:
+			case R.id.button5:
 					/*Thread td = new Thread(new Runnable() {
 						@Override
 						public void run() {

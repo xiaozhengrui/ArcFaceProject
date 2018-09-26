@@ -603,8 +603,9 @@ public class FsService extends Service implements Runnable {
             public void run() {
                 Application app = (Application) FsService.this.getApplicationContext();
                 app.mFaceDB.loadFaces();
-                HttpFaceRegister register = new HttpFaceRegister(FsService.this);
-                register.getImageFromHttp();
+                //mark http register,xiao 2018.9.23
+                //HttpFaceRegister register = new HttpFaceRegister(FsService.this);
+                //register.getImageFromHttp();
             }
         }).start();
     }
