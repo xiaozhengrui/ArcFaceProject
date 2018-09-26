@@ -643,6 +643,9 @@ public class FsService extends Service implements Runnable {
         op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
         op.inJustDecodeBounds = false;
         bmp = BitmapFactory.decodeFile(filePath,op);
+        if(bmp == null){
+            return null;
+        }
         Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
         width = bmp.getWidth();
         height = bmp.getHeight();
