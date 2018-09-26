@@ -60,6 +60,7 @@ import com.arcsoft.genderestimation.ASGE_FSDKGender;
 import com.arcsoft.genderestimation.ASGE_FSDKVersion;
 import com.arcsoft_face_ui.Application;
 import com.arcsoft_face_ui.FaceDB;
+import com.gpio_ctrl.GpioCtrlService;
 import com.guo.android_extend.image.ImageConverter;
 import com.guo.android_extend.java.AbsLoop;
 import com.http_service.HttpFaceRegister;
@@ -828,6 +829,11 @@ public class FsService extends Service implements Runnable {
                 Log.d(TAG,"check face successful!");
                 String name = msg.getData().getString("name");
                 Float fScore = msg.getData().getFloat("score");
+                if(GpioCtrlService.openGpio(254)==true){
+                    GpioCtrlService.setGpioDir(254,GpioCtrlService.GPIO_DIRECTION_OUT);
+                    GpioCtrlService.setGpioValue(254,GpioCtrlService.GPIO_VALUE_HIGH);
+                    GpioCtrlService.closeGpio(254);
+                }
                 Toast.makeText(FsService.this.getApplicationContext(),"姓名"+name+" 置信度："+ fScore ,Toast.LENGTH_SHORT).show();
             }else if(msg.what == 0x002){
                 Toast.makeText(FsService.this,"未检测到人脸",Toast.LENGTH_SHORT).show();

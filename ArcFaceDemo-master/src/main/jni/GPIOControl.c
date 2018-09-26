@@ -1,4 +1,4 @@
-// // Created by Gavin Zhuang on 05/12/2017. //
+// // Created by xiaozhengrui on 09/24/2018. //
 #include <jni.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -35,6 +35,7 @@
     LOGD("gpio is:%d",gpio);
     if (fd < 0) { LOGE("Failed to open export for writing!\n"); return(0); }
     len = snprintf(buffer, BUFFER_MAX, "%d", gpio);
+    LOGD("buffer:%s--len:%d",buffer,len);
     if (write(fd, buffer, len) < 0) { LOGE("Fail to export gpio!\n"); return 0; }
     close(fd);
     return 1;
@@ -54,19 +55,6 @@
         LOGE("failed to set direction!\n"); return 0; }
     close(fd);
     return 1;
-    /*static const char dir_str[] = "in\0out";
-     char path[DIRECTION_MAX];
-     FILE *fd;
-     int size;
-     LOGD("new app!!!!!");
-     snprintf(path, DIRECTION_MAX, "/sys/class/gpio/gpio%d/direction", gpio);
-     fd = fopen(path, "rw");
-     if (fd == NULL) { LOGE("Failed to open direction for writing!\n"); return(0); }
-     //if (write(fd, buffer, len) < 0) { LOGE("Fail to export gpio!\n"); return 0; }
-     //close(fd);
-     size = fwrite(&dir_str[direction == IN ? 0 : 3],sizeof(char),direction == IN ? 2 : 3,fd);
-     fclose(fd);
-     return 1;*/
  }
  /*
  * Class:     com_gpio_1ctrl_GPIOControl
@@ -80,13 +68,6 @@
     if (read(fd, value_str, 3) < 0) { LOGE("failed to read value!\n"); return -1; }
     close(fd);
     return (atoi(value_str));
-    /*char path[DIRECTION_MAX];
-    char value_str[3];
-        FILE *fd; snprintf(path, DIRECTION_MAX, "/sys/class/gpio/gpio%d/value", gpio);
-        fd = fopen(path, "rw"); if (fd == NULL) { LOGE("failed to open gpio value for reading!\n"); return -1; }
-        if (fread(value_str, sizeof(char),3,fd) < 0) { LOGE("failed to read value!\n"); return -1; }
-        fclose(fd);
-        return (atoi(value_str));*/
  }
  /*
  * Class:     com_gpio_1ctrl_GPIOControl
@@ -100,12 +81,6 @@
     if (write(fd, &values_str[value == LOW ? 0 : 1], 1) < 0) { LOGE("failed to write value!\n"); return 0; }
     close(fd);
     return 1;
-    /*static const char values_str[] = "01";
-        char path[DIRECTION_MAX]; FILE *fd; snprintf(path, DIRECTION_MAX, "/sys/class/gpio/gpio%d/value", gpio);
-        fd = fopen(path, "rw"); if (fd == NULL) { LOGE("failed to open gpio value for writing!\n"); return 0; }
-        if (fwrite(&values_str[value == LOW ? 0 : 1], sizeof(char),1,fd) < 0) { LOGE("failed to write value!\n"); return 0; }
-        fclose(fd);
-        return 1;*/
  }
  /*
  * Class:     com_gpio_1ctrl_GPIOControl

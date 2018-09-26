@@ -24,6 +24,7 @@ import com.apk_update.ApkDownLoad;
 import com.ftp_service.ArcFtpList;
 import com.ftp_service.FsService;
 import com.gpio_ctrl.GPIOControl;
+import com.gpio_ctrl.GpioCtrlService;
 
 
 import java.io.DataOutputStream;
@@ -142,24 +143,6 @@ public class MainActivity extends Activity implements OnClickListener {
 	}
 
 
-	private void chmodWithOneFile(String fileName) {
-		Process p;
-		try {
-			p = Runtime.getRuntime().exec("chmod 644 " + fileName);
-			int status;
-			status = p.waitFor();
-			if (status == 0) {
-				Log.d(TAG, "ChangeMode success " + fileName);
-			} else {
-				Log.d(TAG, "ChangeMode failure " + fileName);
-			}
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-	}
-	}
-
 
 	private boolean RootCommand(String command) {
 		Process process = null;
@@ -167,7 +150,6 @@ public class MainActivity extends Activity implements OnClickListener {
 		try {
 			process = Runtime.getRuntime().exec("su");
 			os = new DataOutputStream(process.getOutputStream());
-			os.writeBytes(command + "\n");
 			os.writeBytes(command + "\n");
 			os.writeBytes("exit\n");
 			os.flush();
@@ -205,35 +187,30 @@ public class MainActivity extends Activity implements OnClickListener {
 		// TODO Auto-generated method stub
 		switch (paramView.getId()) {
 			case R.id.button3:
-				Toast.makeText(this,"button push 888",Toast.LENGTH_SHORT).show();
-				//doSU();
-				//RootCommand("chmod -R 777 /sys/class/gpio/export");
-				//GPIOControl.exportGpio(254);
+				Toast.makeText(this,"button push 55",Toast.LENGTH_SHORT).show();
 				Thread thread = new Thread(new Runnable() {
 					@Override
 					public void run() {
 						try {
-							RootCommand("echo 254 > /sys/class/gpio/export");
-							//RootCommand("echo out > /sys/class/gpio/gpio254/direction");
+							GpioCtrlService.openGpio(254);
+							GpioCtrlService.setGpioDir(254,
+									GpioCtrlService.GPIO_DIRECTION_OUT);
+							//RootCommand("echo 254 > /sys/class/gpio/export");
+							//GPIOControl.exportGpio(254);
+//							GPIOControl.setGpioDirection(254,
+//									GPIOControl.GPIO_DIRECTION_OUT);
 
-							RootCommand("chmod -R 777 /sys/class/gpio/gpio254/direction");
-							GPIOControl.setGpioDirection(254,
-									GPIOControl.GPIO_DIRECTION_OUT);
 							boolean flag = true;
 							while (true){
-//								if(flag){
-//									RootCommand("echo 1 > /sys/class/gpio/gpio254/value");
-//								}else{
-//									RootCommand("echo 0 > /sys/class/gpio/gpio254/value");
-//								}
-								RootCommand("chmod -R 777 /sys/class/gpio/gpio254/value");
-								GPIOControl.writeGpioStatus(254, flag ? GPIOControl.GPIO_VALUE_HIGH : GPIOControl.GPIO_VALUE_LOW);
+								GpioCtrlService.setGpioValue(254, flag ? GpioCtrlService.GPIO_VALUE_HIGH : GpioCtrlService.GPIO_VALUE_LOW);
+								//GPIOControl.writeGpioStatus(254, flag ? GPIOControl.GPIO_VALUE_HIGH : GPIOControl.GPIO_VALUE_LOW);
 								flag = !flag;
 								Thread.sleep(2000);
 							}
-							//GPIOControl.unexportGpio(254);
 						} catch (Exception ex){
 							ex.printStackTrace();
+						}finally{
+							GPIOControl.unexportGpio(254);
 						}
 					}
 				});
