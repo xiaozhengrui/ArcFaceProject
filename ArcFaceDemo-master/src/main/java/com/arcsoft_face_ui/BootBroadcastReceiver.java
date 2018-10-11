@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.advert.mp4.act.PlayMP4Activity;
+import com.advert.mp4.fragment.VideoViewFragment;
 import com.ftp_service.FsService;
 
 /**
@@ -25,6 +27,10 @@ public  class BootBroadcastReceiver extends BroadcastReceiver {
                 //ContextWrapper cWrapper = new ContextWrapper(context);
                 Log.d(TAG, "startService");
                 context.startService(serverService);
+                Intent itForMp4 = new Intent();
+                itForMp4.setClass(context,PlayMP4Activity.class);
+                itForMp4.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(itForMp4);
             }
         }
     }

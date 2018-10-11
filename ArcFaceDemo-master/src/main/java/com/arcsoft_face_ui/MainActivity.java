@@ -20,9 +20,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 
+import com.advert.mp4.act.PlayMP4Activity;
 import com.apk_update.ApkDownLoad;
 import com.ftp_service.ArcFtpList;
 import com.ftp_service.FsService;
+import com.google.gson.Gson;
 import com.gpio_ctrl.GPIOControl;
 import com.gpio_ctrl.GpioCtrlService;
 
@@ -187,34 +189,35 @@ public class MainActivity extends Activity implements OnClickListener {
 		// TODO Auto-generated method stub
 		switch (paramView.getId()) {
 			case R.id.button3:
-				Toast.makeText(this,"button push 55",Toast.LENGTH_SHORT).show();
-				Thread thread = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							GpioCtrlService.openGpio(254);
-							GpioCtrlService.setGpioDir(254,
-									GpioCtrlService.GPIO_DIRECTION_OUT);
-							//RootCommand("echo 254 > /sys/class/gpio/export");
-							//GPIOControl.exportGpio(254);
-//							GPIOControl.setGpioDirection(254,
-//									GPIOControl.GPIO_DIRECTION_OUT);
-
-							boolean flag = true;
-							while (true){
-								GpioCtrlService.setGpioValue(254, flag ? GpioCtrlService.GPIO_VALUE_HIGH : GpioCtrlService.GPIO_VALUE_LOW);
-								//GPIOControl.writeGpioStatus(254, flag ? GPIOControl.GPIO_VALUE_HIGH : GPIOControl.GPIO_VALUE_LOW);
-								flag = !flag;
-								Thread.sleep(2000);
-							}
-						} catch (Exception ex){
-							ex.printStackTrace();
-						}finally{
-							GPIOControl.unexportGpio(254);
-						}
-					}
-				});
-				thread.start();
+//				Toast.makeText(this,"button push 55",Toast.LENGTH_SHORT).show();
+//				Thread thread = new Thread(new Runnable() {
+//					@Override
+//					public void run() {
+//						try {
+//							GpioCtrlService.openGpio(254);
+//							GpioCtrlService.setGpioDir(254,
+//									GpioCtrlService.GPIO_DIRECTION_OUT);
+//							//RootCommand("echo 254 > /sys/class/gpio/export");
+//							//GPIOControl.exportGpio(254);
+////							GPIOControl.setGpioDirection(254,
+////									GPIOControl.GPIO_DIRECTION_OUT);
+//
+//							boolean flag = true;
+//							while (true){
+//								GpioCtrlService.setGpioValue(254, flag ? GpioCtrlService.GPIO_VALUE_HIGH : GpioCtrlService.GPIO_VALUE_LOW);
+//								//GPIOControl.writeGpioStatus(254, flag ? GPIOControl.GPIO_VALUE_HIGH : GPIOControl.GPIO_VALUE_LOW);
+//								flag = !flag;
+//								Thread.sleep(2000);
+//							}
+//						} catch (Exception ex){
+//							ex.printStackTrace();
+//						}finally{
+//							GPIOControl.unexportGpio(254);
+//						}
+//					}
+//				});
+//				thread.start();
+				startActivity(new Intent(getApplicationContext(), PlayMP4Activity.class));
 				break;
 			case R.id.StartService:
 				Log.d(TAG,"StartService");

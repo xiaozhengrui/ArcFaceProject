@@ -18,11 +18,12 @@
     <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="24"/>
     <application
         android:name="com.arcsoft_face_ui.Application"
-        android:allowBackup="false"
+        android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:supportsRtl="false"
+        android:supportsRtl="true"
         android:sharedUserId="android.uid.system"
+        android:theme="@style/MPAppTheme"
        >
         <service android:name="com.ftp_service.FsService" />
         <service android:name="com.ftp_service.NsdService" />
@@ -39,6 +40,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"></action>
             </intent-filter>
+        <!--</receiver>-->
+        <!--<receiver android:name="com.advert.mp4.usb.usbInsertBroadcastReceiver">-->
+            <!--<intent-filter>-->
+                <!--<data android:scheme="file">-->
+                <!--</data>-->
+                <!--<action android:name="android.hardware.usb.action.USB_STATE"/>-->
+            <!--</intent-filter>-->
         </receiver>
 
         <activity android:name="com.arcsoft_face_ui.PermissionAcitivity">
@@ -48,6 +56,8 @@
             </intent-filter>
         </activity>
         <activity android:name="com.arcsoft_face_ui.RegisterActivity">
+        </activity>
+        <activity android:name="com.advert.mp4.act.PlayMP4Activity">
         </activity>
         <activity android:name="com.arcsoft_face_ui.DetecterActivity">
         </activity>
