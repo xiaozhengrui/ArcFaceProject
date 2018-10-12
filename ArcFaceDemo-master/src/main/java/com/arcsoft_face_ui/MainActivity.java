@@ -20,19 +20,17 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 
-import com.advert.mp4.act.PlayMP4Activity;
 import com.apk_update.ApkDownLoad;
 import com.ftp_service.ArcFtpList;
 import com.ftp_service.FsService;
-import com.google.gson.Gson;
-import com.gpio_ctrl.GPIOControl;
-import com.gpio_ctrl.GpioCtrlService;
-
+import com.json_parse.json_advert;
+import com.json_parse.json_service;
 
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class MainActivity extends Activity implements OnClickListener {
@@ -217,8 +215,22 @@ public class MainActivity extends Activity implements OnClickListener {
 //					}
 //				});
 //				thread.start();
-				startActivity(new Intent(getApplicationContext(), PlayMP4Activity.class));
-				break;
+				//startActivity(new Intent(getApplicationContext(), PlayMP4Activity.class));
+
+
+//
+				StringBuilder stringBuilder = new StringBuilder();
+				json_service js = new json_service();
+				ArrayList<json_advert> ad_json_msg = js.getJsonForAdvert(Environment.DIRECTORY_DCIM);
+				if(ad_json_msg != null){
+					for(json_advert admg:ad_json_msg){
+						stringBuilder.append("id:"+admg.getAd_id().toString());
+						stringBuilder.append(" url:"+admg.getUrl());
+						stringBuilder.append("\n");
+					}
+					Toast.makeText(this,"json内容为:"+stringBuilder,Toast.LENGTH_LONG).show();
+				}
+		break;
 			case R.id.StartService:
 				Log.d(TAG,"StartService");
 				/*Intent intent1 = new Intent().setClass(this, MainTcpActivity.class);
