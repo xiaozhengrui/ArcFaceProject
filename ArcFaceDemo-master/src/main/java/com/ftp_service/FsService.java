@@ -37,8 +37,7 @@ import java.util.List;
 
 import android.widget.Toast;
 
-//import net.vrallev.android.cat.Cat;
-
+import com.arc_sdk.FaceDB;
 import com.arcsoft.ageestimation.ASAE_FSDKAge;
 import com.arcsoft.ageestimation.ASAE_FSDKEngine;
 import com.arcsoft.ageestimation.ASAE_FSDKError;
@@ -59,15 +58,11 @@ import com.arcsoft.genderestimation.ASGE_FSDKFace;
 import com.arcsoft.genderestimation.ASGE_FSDKGender;
 import com.arcsoft.genderestimation.ASGE_FSDKVersion;
 import com.arcsoft_face_ui.Application;
-import com.arcsoft_face_ui.FaceDB;
+import com.face_detect.FaceEngineConfig;
 import com.gpio_ctrl.GpioCtrlService;
 import com.guo.android_extend.image.ImageConverter;
 import com.guo.android_extend.java.AbsLoop;
-import com.http_service.HttpFaceRegister;
 
-//import be.ppareit.swiftp.server.SessionThread;
-//import be.ppareit.swiftp.server.TcpListener;
-//import lombok.val;
 
 public class FsService extends Service implements Runnable {
     private static final String TAG = FsService.class.getSimpleName();
@@ -83,24 +78,24 @@ public class FsService extends Service implements Runnable {
 
     protected static Thread serverThread = null;
     protected boolean shouldExit = false;
-    AFT_FSDKVersion version = new AFT_FSDKVersion();
-    AFT_FSDKEngine engine = new AFT_FSDKEngine();
-    ASAE_FSDKVersion mAgeVersion = new ASAE_FSDKVersion();
-    ASAE_FSDKEngine mAgeEngine = new ASAE_FSDKEngine();
-    ASGE_FSDKVersion mGenderVersion = new ASGE_FSDKVersion();
-    ASGE_FSDKEngine mGenderEngine = new ASGE_FSDKEngine();
-    List<AFT_FSDKFace> result = new ArrayList<>();
-    List<ASAE_FSDKAge> ages = new ArrayList<>();
-    List<ASGE_FSDKGender> genders = new ArrayList<>();
-
-    byte[] mImageNV21 = null;
-    byte[] mImageFtp = null;
-    int mFaceIndex=0;
-    List<AFT_FSDKFace> mAFT_FSDKFaceList = new ArrayList<>();
-
-    AFT_FSDKFace mAFT_FSDKFace = null;
+//    AFT_FSDKVersion version = new AFT_FSDKVersion();
+//    AFT_FSDKEngine engine = new AFT_FSDKEngine();
+//    ASAE_FSDKVersion mAgeVersion = new ASAE_FSDKVersion();
+//    ASAE_FSDKEngine mAgeEngine = new ASAE_FSDKEngine();
+//    ASGE_FSDKVersion mGenderVersion = new ASGE_FSDKVersion();
+//    ASGE_FSDKEngine mGenderEngine = new ASGE_FSDKEngine();
+//    List<AFT_FSDKFace> result = new ArrayList<>();
+//    List<ASAE_FSDKAge> ages = new ArrayList<>();
+//    List<ASGE_FSDKGender> genders = new ArrayList<>();
+//
+//    byte[] mImageNV21 = null;
+//    byte[] mImageFtp = null;
+//    int mFaceIndex=0;
+//    List<AFT_FSDKFace> mAFT_FSDKFaceList = new ArrayList<>();
+//
+//    AFT_FSDKFace mAFT_FSDKFace = null;
     FRAbsLoop mFRAbsLoop = null;
-    private int mWidth, mHeight;
+//    private int mWidth, mHeight;
     long time;
     protected ServerSocket listenSocket;
 
@@ -117,25 +112,31 @@ public class FsService extends Service implements Runnable {
     private static int fileCount;
     private PowerManager.WakeLock wakeLock;
     private WifiManager.WifiLock wifiLock = null;
+    FaceEngineConfig faceEngineConfig;
     @Override
     public void onCreate() {
         Log.d(TAG,"service onCreate");
         fileCount = Environment.getExternalStorageDirectory().listFiles().length;
+
+        faceEngineConfig = new FaceEngineConfig(FaceEngineConfig.CONFIG_ARC,this);
+        faceEngineConfig.onActivate();
+        faceEngineConfig.onInitialize();
+
         //start detect when receive broadcast,so mark it
-        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
-        Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
-        err = engine.AFT_FSDK_GetVersion(version);
-        Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
-
-        ASAE_FSDKError error = mAgeEngine.ASAE_FSDK_InitAgeEngine(FaceDB.appid, FaceDB.age_key);
-        Log.d(TAG, "ASAE_FSDK_InitAgeEngine =" + error.getCode());
-        error = mAgeEngine.ASAE_FSDK_GetVersion(mAgeVersion);
-        Log.d(TAG, "ASAE_FSDK_GetVersion:" + mAgeVersion.toString() + "," + error.getCode());
-
-        ASGE_FSDKError error1 = mGenderEngine.ASGE_FSDK_InitgGenderEngine(FaceDB.appid, FaceDB.gender_key);
-        Log.d(TAG, "ASGE_FSDK_InitgGenderEngine =" + error1.getCode());
-        error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
-        Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
+//        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
+//        Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
+//        err = engine.AFT_FSDK_GetVersion(version);
+//        Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
+//
+//        ASAE_FSDKError error = mAgeEngine.ASAE_FSDK_InitAgeEngine(FaceDB.appid, FaceDB.age_key);
+//        Log.d(TAG, "ASAE_FSDK_InitAgeEngine =" + error.getCode());
+//        error = mAgeEngine.ASAE_FSDK_GetVersion(mAgeVersion);
+//        Log.d(TAG, "ASAE_FSDK_GetVersion:" + mAgeVersion.toString() + "," + error.getCode());
+//
+//        ASGE_FSDKError error1 = mGenderEngine.ASGE_FSDK_InitgGenderEngine(FaceDB.appid, FaceDB.gender_key);
+//        Log.d(TAG, "ASGE_FSDK_InitgGenderEngine =" + error1.getCode());
+//        error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
+//        Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
     }
 
     @Override
@@ -159,40 +160,6 @@ public class FsService extends Service implements Runnable {
         return START_STICKY;
     }
 
-
-    private String getImages() {
-        final String[] path = new String[1];
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Uri mImageUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-                ContentResolver mContentResolver = FsService.this.getContentResolver();
-
-                //只查询jpeg的图片
-                Cursor mCursor = mContentResolver.query(mImageUri, null,
-                        MediaStore.Images.Media.MIME_TYPE + "=? or "
-                                + MediaStore.Images.Media.MIME_TYPE + "=?",
-                        new String[] { "image/jpeg" }, MediaStore.Images.Media.DATE_ADDED);
-
-                if(mCursor == null){
-                    return;
-                }
-
-                while (mCursor.moveToNext()) {
-                    //获取图片的路径
-                    path[0] = mCursor.getString(mCursor
-                            .getColumnIndex(MediaStore.Images.Media.DATA));
-
-                    //获取该图片的父路径名
-                    //String parentName = new File(path).getParentFile().getName();
-                }
-
-                mCursor.close();
-            }
-        }).start();
-        Log.d(TAG,"media store path:"+path[0]);
-        return path[0];
-    }
 
 
 
@@ -250,15 +217,16 @@ public class FsService extends Service implements Runnable {
         }
 
         mFRAbsLoop.shutdown();
-        AFT_FSDKError err = engine.AFT_FSDK_UninitialFaceEngine();
-        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine =" + err.getCode());
-
-        ASAE_FSDKError err1 = mAgeEngine.ASAE_FSDK_UninitAgeEngine();
-        Log.d(TAG, "ASAE_FSDK_UninitAgeEngine =" + err1.getCode());
-
-        ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
-        Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
-        Log.d(TAG, "FTPServerService.onDestroy() finished");
+        faceEngineConfig.onReleaseEngine();
+//        AFT_FSDKError err = engine.AFT_FSDK_UninitialFaceEngine();
+//        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine =" + err.getCode());
+//
+//        ASAE_FSDKError err1 = mAgeEngine.ASAE_FSDK_UninitAgeEngine();
+//        Log.d(TAG, "ASAE_FSDK_UninitAgeEngine =" + err1.getCode());
+//
+//        ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
+//        Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
+//        Log.d(TAG, "FTPServerService.onDestroy() finished");
     }
 
     // This opens a listening socket on all interfaces.
@@ -395,26 +363,6 @@ public class FsService extends Service implements Runnable {
             Log.e(TAG, "getLocalInetAddress called and no connection");
             return null;
         }
-        /*try {
-            val networkInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-            for (NetworkInterface networkInterface : networkInterfaces) {
-                // only check network interfaces that give local connection
-                if (!networkInterface.getName().matches("^(eth|wlan).*"))
-                    continue;
-                for (InetAddress address : Collections.list(networkInterface.getInetAddresses())) {
-                    if (!address.isLoopbackAddress()
-                            && !address.isLinkLocalAddress()
-                            && address instanceof Inet4Address) {
-                        if (returnAddress != null) {
-                            //Cat.w("Found more than one valid address local inet address, why???");
-                        }
-                        returnAddress = address;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
         try {
             returnAddress = InetAddress.getByName("192.168.1.102");
         }catch(Exception e){
@@ -449,16 +397,6 @@ public class FsService extends Service implements Runnable {
         }
         if (!connected) {
             Log.d(TAG, "isConnectedToLocalNetwork: see if it is an USB AP");
-            /*try {
-                val networkInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-                for (NetworkInterface netInterface : networkInterfaces) {
-                    if (netInterface.getDisplayName().startsWith("rndis")) {
-                        connected = true;
-                    }
-                }
-            } catch (SocketException e) {
-                e.printStackTrace();
-            }*/
             connected = true;
         }
         return connected;
@@ -523,20 +461,6 @@ public class FsService extends Service implements Runnable {
                 SystemClock.elapsedRealtime() + 2000, restartServicePI);
     }
 
-    public static byte[] getYUV420sp(int inputWidth, int inputHeight,
-                                     Bitmap scaled) {
-
-        int[] argb = new int[inputWidth * inputHeight];
-
-        scaled.getPixels(argb, 0, inputWidth, 0, 0, inputWidth, inputHeight);
-
-        byte[] yuv = new byte[inputWidth * inputHeight * 3 / 2];
-        encodeYUV420SP(yuv, argb, inputWidth, inputHeight);
-
-        scaled.recycle();
-
-        return yuv;
-    }
 
 
     private static void encodeYUV420SP(byte[] yuv420sp, int[] argb, int width,
@@ -598,23 +522,23 @@ public class FsService extends Service implements Runnable {
     }
 
 
-    public void getFaceDB(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Application app = (Application) FsService.this.getApplicationContext();
-                app.mFaceDB.loadFaces();
-                //mark http register,xiao 2018.9.23
-                //HttpFaceRegister register = new HttpFaceRegister(FsService.this);
-                //register.getImageFromHttp();
-            }
-        }).start();
-    }
+//    public void getFaceDB(){
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                Application app = (Application) FsService.this.getApplicationContext();
+//                app.mFaceDB.loadFaces();
+//                //mark http register,xiao 2018.9.23
+//                //HttpFaceRegister register = new HttpFaceRegister(FsService.this);
+//                //register.getImageFromHttp();
+//            }
+//        }).start();
+//    }
 
 
     private void FtpPathScan(String scanPath){
         File scanFile = new File(scanPath);
-        if(scanFile.listFiles().length>fileCount && ftpModifyOk){
+        if(scanFile.listFiles().length>fileCount /*&& ftpModifyOk*/){//ftpModifyOk is waiting for ftp transform img finish!!
             ftpModifyOk = false;
             time = System.currentTimeMillis();
             Log.d(TAG,"FtpPathScan Start");
@@ -622,71 +546,72 @@ public class FsService extends Service implements Runnable {
             String[] file = scanFile.list();
             String filePath;
             filePath = scanFile+"/"+file[fileCount-1];
-            Object object = getFtpClientCurrentData(filePath);
+            //Object object = getFtpClientCurrentData(filePath);
+            faceEngineConfig.onIdentify(filePath);
         }
     }
 
 
-    public Object getFtpClientCurrentData(String filePath){
-        int width,height;
-        Bitmap bmp;
-
-        if(!filePath.contains(".jpg")){
-            return null;
-        }
-        Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
-        //long time = System.currentTimeMillis();
-        BitmapFactory.Options op = new BitmapFactory.Options();
-        op.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(filePath,op);
-        Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
-        op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
-        op.inJustDecodeBounds = false;
-        bmp = BitmapFactory.decodeFile(filePath,op);
-        if(bmp == null){
-            return null;
-        }
-        Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
-        width = bmp.getWidth();
-        height = bmp.getHeight();
-
-        byte[] ImageData = new byte[width * height * 3 / 2];
-        ImageConverter convert = new ImageConverter();
-        convert.initial(width, height, ImageConverter.CP_PAF_NV21);
-        if (convert.convert(bmp, ImageData)) {
-            Log.d(TAG, "convert ok!");
-        }
-        convert.destroy();
-
-        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
-        Log.d(TAG, "AFT_FSDK_InitialFaceEngine2 =" + err.getCode());
-        err = engine.AFT_FSDK_GetVersion(version);
-        Log.d(TAG, "AFT_FSDK_GetVersion2:" + version.toString() + "," + err.getCode());
-
-        err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
-        Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
-        Log.d(TAG, "Face=" + result.size());
-        if(result.size() == 0){
-            Message msg = new Message();
-            msg.what = 0x002;
-            handler.sendMessage(msg);
-        }else{
-            for (AFT_FSDKFace rt : result) {
-                mAFT_FSDKFaceList.add(rt.clone());
-            }
-            result.clear();
-            mImageFtp = ImageData.clone();
-            mWidth = width;
-            mHeight = height;
-        }
-        AFT_FSDKError error = engine.AFT_FSDK_UninitialFaceEngine();
-        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine2 : " + error.getCode());
-        for (AFT_FSDKFace face : result) {
-            Log.d(TAG, "Face:" + face.toString());
-        }
-        Log.d(TAG,"detect face cost:"+(System.currentTimeMillis()-time)+"ms");
-        return null;
-    }
+//    public Object getFtpClientCurrentData(String filePath){
+//        int width,height;
+//        Bitmap bmp;
+//
+//        if(!filePath.contains(".jpg")){
+//            return null;
+//        }
+//        Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
+//        //long time = System.currentTimeMillis();
+//        BitmapFactory.Options op = new BitmapFactory.Options();
+//        op.inJustDecodeBounds = true;
+//        BitmapFactory.decodeFile(filePath,op);
+//        Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
+//        op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
+//        op.inJustDecodeBounds = false;
+//        bmp = BitmapFactory.decodeFile(filePath,op);
+//        if(bmp == null){
+//            return null;
+//        }
+//        Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
+//        width = bmp.getWidth();
+//        height = bmp.getHeight();
+//
+//        byte[] ImageData = new byte[width * height * 3 / 2];
+//        ImageConverter convert = new ImageConverter();
+//        convert.initial(width, height, ImageConverter.CP_PAF_NV21);
+//        if (convert.convert(bmp, ImageData)) {
+//            Log.d(TAG, "convert ok!");
+//        }
+//        convert.destroy();
+//
+//        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
+//        Log.d(TAG, "AFT_FSDK_InitialFaceEngine2 =" + err.getCode());
+//        err = engine.AFT_FSDK_GetVersion(version);
+//        Log.d(TAG, "AFT_FSDK_GetVersion2:" + version.toString() + "," + err.getCode());
+//
+//        err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
+//        Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
+//        Log.d(TAG, "Face=" + result.size());
+//        if(result.size() == 0){
+//            Message msg = new Message();
+//            msg.what = 0x002;
+//            handler.sendMessage(msg);
+//        }else{
+//            for (AFT_FSDKFace rt : result) {
+//                mAFT_FSDKFaceList.add(rt.clone());
+//            }
+//            result.clear();
+//            mImageFtp = ImageData.clone();
+//            mWidth = width;
+//            mHeight = height;
+//        }
+//        AFT_FSDKError error = engine.AFT_FSDK_UninitialFaceEngine();
+//        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine2 : " + error.getCode());
+//        for (AFT_FSDKFace face : result) {
+//            Log.d(TAG, "Face:" + face.toString());
+//        }
+//        Log.d(TAG,"detect face cost:"+(System.currentTimeMillis()-time)+"ms");
+//        return null;
+//    }
 
 
     public static int calculateInSampleSize(BitmapFactory.Options options,
@@ -708,24 +633,23 @@ public class FsService extends Service implements Runnable {
 
     class FRAbsLoop extends AbsLoop {
 
-        AFR_FSDKVersion version = new AFR_FSDKVersion();
-        AFR_FSDKEngine engine = new AFR_FSDKEngine();
-        AFR_FSDKFace result = new AFR_FSDKFace();
-        List<FaceDB.FaceRegist> mResgist = ((Application)FsService.this.getApplicationContext()).mFaceDB.mRegister;
-        //String registPath = ((Application)DetecterActivity.this.getApplicationContext()).mFaceDB.mDBPath;
-
-        List<ASAE_FSDKFace> face1 = new ArrayList<>();
-        List<ASGE_FSDKFace> face2 = new ArrayList<>();
+//        AFR_FSDKVersion version = new AFR_FSDKVersion();
+//        AFR_FSDKEngine engine = new AFR_FSDKEngine();
+//        AFR_FSDKFace result = new AFR_FSDKFace();
+//        List<FaceDB.FaceRegist> mResgist = ((Application)FsService.this.getApplicationContext()).mFaceDB.mRegister;
+//
+//        List<ASAE_FSDKFace> face1 = new ArrayList<>();
+//        List<ASGE_FSDKFace> face2 = new ArrayList<>();
 
         @Override
         public void setup() {
-            Log.d(TAG,"FsService setup");
-            AFR_FSDKError error = engine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
-            Log.d(TAG, "AFR_FSDK_InitialEngine = " + error.getCode());
-
-            error = engine.AFR_FSDK_GetVersion(version);
-            Log.d(TAG, "FR=" + version.toString() + "," + error.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
-            getFaceDB();
+//            Log.d(TAG,"FsService setup");
+//            AFR_FSDKError error = engine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
+//            Log.d(TAG, "AFR_FSDK_InitialEngine = " + error.getCode());
+//
+//            error = engine.AFR_FSDK_GetVersion(version);
+//            Log.d(TAG, "FR=" + version.toString() + "," + error.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
+//            getFaceDB();
         }
 
 
@@ -733,94 +657,94 @@ public class FsService extends Service implements Runnable {
         @Override
         public void loop() {
             FtpPathScan(Environment.getExternalStorageDirectory().toString());
-            if(mAFT_FSDKFaceList.size()> mFaceIndex){
-                mImageNV21 = mImageFtp.clone();
-                mAFT_FSDKFace = mAFT_FSDKFaceList.get(mFaceIndex).clone();
-                mFaceIndex++;
-                if(mFaceIndex == mAFT_FSDKFaceList.size()){
-                    mAFT_FSDKFaceList.clear();
-                    mFaceIndex = 0;
-                }
-            }
-            if (mImageNV21 != null) {
-                long time1 = System.currentTimeMillis();
-                time = System.currentTimeMillis();
-                Log.d(TAG,"AFR_FSDK_ExtractFRFeature is ok");
-                AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), result);
-                Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time1) + "ms");
-                Log.d(TAG, "Face=" + result.getFeatureData()[0] + "," + result.getFeatureData()[1] + "," + result.getFeatureData()[2] + "," + error.getCode());
-                AFR_FSDKMatching score = new AFR_FSDKMatching();
-                float max = 0.0f;
-                String name = null;
-                time1 = System.currentTimeMillis();
-                for (FaceDB.FaceRegist fr : mResgist) {
-                    for (AFR_FSDKFace face : fr.mFaceList) {
-                        error = engine.AFR_FSDK_FacePairMatching(result, face, score);
-
-                        Log.d(TAG,  "Score:" + score.getScore() + ", AFR_FSDK_FacePairMatching=" + error.getCode());
-                        if (max < score.getScore()) {
-                            max = score.getScore();
-                            name = fr.mName;
-                        }
-                    }
-                }
-                Log.d(TAG, "AFR_FSDK_FacePairMatching cost :" + (System.currentTimeMillis() - time1) + "ms");
-                //age & gender
-                face1.clear();
-                face2.clear();
-                face1.add(new ASAE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-                face2.add(new ASGE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-                ASAE_FSDKError error1 = mAgeEngine.ASAE_FSDK_AgeEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face1, ages);
-                ASGE_FSDKError error2 = mGenderEngine.ASGE_FSDK_GenderEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face2, genders);
-                Log.d(TAG, "ASAE_FSDK_AgeEstimation_Image:" + error1.getCode() + ",ASGE_FSDK_GenderEstimation_Image:" + error2.getCode());
-                Log.d(TAG, "age:" + ages.get(0).getAge() + ",gender:" + genders.get(0).getGender());
-                final String age = ages.get(0).getAge() == 0 ? "年龄未知" : ages.get(0).getAge() + "岁";
-                final String gender = genders.get(0).getGender() == -1 ? "性别未知" : (genders.get(0).getGender() == 0 ? "男" : "女");
-
-                //crop
-                byte[] data = mImageNV21;
-                Log.d(TAG,"rect 1:"+mWidth+" "+mHeight);
-                Log.d(TAG,"rect 2:"+mAFT_FSDKFace.getRect());
-                Rect rect = new Rect(0, 0, mWidth, mHeight);
-                if(rect.contains(mAFT_FSDKFace.getRect())) {
-                    /*YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
-                    ExtByteArrayOutputStream ops = new ExtByteArrayOutputStream();
-                    yuv.compressToJpeg(mAFT_FSDKFace.getRect(), 80, ops);
-                    final Bitmap bmp = BitmapFactory.decodeByteArray(ops.getByteArray(), 0, ops.getByteArray().length);
-
-                    try {
-                        ops.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }*/
-                }
-                Log.d(TAG, "max fit Score:" + max);
-                if (max > 0.6f) {
-                    //fr success.
-                    final float max_score = max;
-                    Log.d(TAG, "fit Score:" + max + ", NAME:" + name);
-                    final String mNameShow = name;
-                    mAFT_FSDKFaceList.clear();//clear face list when checked!!
-                    mFaceIndex =  0;
-                    Message msg = new Message();
-                    msg.what = 0x001;
-                    Bundle bd = new Bundle();
-                    bd.putString("name",mNameShow);
-                    double fscroe = (float) ((int) (max_score * 1000)) / 1000.0;
-                    bd.putFloat("score", (float)fscroe);
-                    msg.setData(bd);
-                    handler.sendMessage(msg);
-                    Log.d(TAG, "check face ok cost :" + (System.currentTimeMillis() - time) + "ms");
-                }
-                mImageNV21 = null;
-            }
+//            if(mAFT_FSDKFaceList.size()> mFaceIndex){
+//                mImageNV21 = mImageFtp.clone();
+//                mAFT_FSDKFace = mAFT_FSDKFaceList.get(mFaceIndex).clone();
+//                mFaceIndex++;
+//                if(mFaceIndex == mAFT_FSDKFaceList.size()){
+//                    mAFT_FSDKFaceList.clear();
+//                    mFaceIndex = 0;
+//                }
+//            }
+//            if (mImageNV21 != null) {
+//                long time1 = System.currentTimeMillis();
+//                time = System.currentTimeMillis();
+//                Log.d(TAG,"AFR_FSDK_ExtractFRFeature is ok");
+//                AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), result);
+//                Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time1) + "ms");
+//                Log.d(TAG, "Face=" + result.getFeatureData()[0] + "," + result.getFeatureData()[1] + "," + result.getFeatureData()[2] + "," + error.getCode());
+//                AFR_FSDKMatching score = new AFR_FSDKMatching();
+//                float max = 0.0f;
+//                String name = null;
+//                time1 = System.currentTimeMillis();
+//                for (FaceDB.FaceRegist fr : mResgist) {
+//                    for (AFR_FSDKFace face : fr.mFaceList) {
+//                        error = engine.AFR_FSDK_FacePairMatching(result, face, score);
+//
+//                        Log.d(TAG,  "Score:" + score.getScore() + ", AFR_FSDK_FacePairMatching=" + error.getCode());
+//                        if (max < score.getScore()) {
+//                            max = score.getScore();
+//                            name = fr.mName;
+//                        }
+//                    }
+//                }
+//                Log.d(TAG, "AFR_FSDK_FacePairMatching cost :" + (System.currentTimeMillis() - time1) + "ms");
+//                //age & gender
+//                face1.clear();
+//                face2.clear();
+//                face1.add(new ASAE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
+//                face2.add(new ASGE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
+//                ASAE_FSDKError error1 = mAgeEngine.ASAE_FSDK_AgeEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face1, ages);
+//                ASGE_FSDKError error2 = mGenderEngine.ASGE_FSDK_GenderEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face2, genders);
+//                Log.d(TAG, "ASAE_FSDK_AgeEstimation_Image:" + error1.getCode() + ",ASGE_FSDK_GenderEstimation_Image:" + error2.getCode());
+//                Log.d(TAG, "age:" + ages.get(0).getAge() + ",gender:" + genders.get(0).getGender());
+//                final String age = ages.get(0).getAge() == 0 ? "年龄未知" : ages.get(0).getAge() + "岁";
+//                final String gender = genders.get(0).getGender() == -1 ? "性别未知" : (genders.get(0).getGender() == 0 ? "男" : "女");
+//
+//                //crop
+//                byte[] data = mImageNV21;
+//                Log.d(TAG,"rect 1:"+mWidth+" "+mHeight);
+//                Log.d(TAG,"rect 2:"+mAFT_FSDKFace.getRect());
+//                Rect rect = new Rect(0, 0, mWidth, mHeight);
+//                if(rect.contains(mAFT_FSDKFace.getRect())) {
+//                    /*YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
+//                    ExtByteArrayOutputStream ops = new ExtByteArrayOutputStream();
+//                    yuv.compressToJpeg(mAFT_FSDKFace.getRect(), 80, ops);
+//                    final Bitmap bmp = BitmapFactory.decodeByteArray(ops.getByteArray(), 0, ops.getByteArray().length);
+//
+//                    try {
+//                        ops.close();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }*/
+//                }
+//                Log.d(TAG, "max fit Score:" + max);
+//                if (max > 0.6f) {
+//                    //fr success.
+//                    final float max_score = max;
+//                    Log.d(TAG, "fit Score:" + max + ", NAME:" + name);
+//                    final String mNameShow = name;
+//                    mAFT_FSDKFaceList.clear();//clear face list when checked!!
+//                    mFaceIndex =  0;
+//                    Message msg = new Message();
+//                    msg.what = 0x001;
+//                    Bundle bd = new Bundle();
+//                    bd.putString("name",mNameShow);
+//                    double fscroe = (float) ((int) (max_score * 1000)) / 1000.0;
+//                    bd.putFloat("score", (float)fscroe);
+//                    msg.setData(bd);
+//                    handler.sendMessage(msg);
+//                    Log.d(TAG, "check face ok cost :" + (System.currentTimeMillis() - time) + "ms");
+//                }
+//                mImageNV21 = null;
+//            }
         }
 
         @Override
         public void over() {
             Log.d(TAG,"FsService over!");
-            AFR_FSDKError error = engine.AFR_FSDK_UninitialEngine();
-            Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
+//            AFR_FSDKError error = engine.AFR_FSDK_UninitialEngine();
+//            Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
         }
     }
 

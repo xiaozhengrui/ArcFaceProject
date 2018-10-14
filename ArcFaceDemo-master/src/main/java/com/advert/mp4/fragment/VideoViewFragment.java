@@ -99,6 +99,9 @@ public class VideoViewFragment extends Fragment {
                 if (!TextUtils.isEmpty(mMP4Path.get(playId))) {
                     mVideoView.setVideoPath(mMP4Path.get(playId));
                     mVideoView.seekTo(0);
+                    if(mVideoView.isPlaying()){
+                        mVideoView.resume();
+                    }
                     mVideoView.start();
                     pathTv.setText(mMP4Path.get(playId));
                 }

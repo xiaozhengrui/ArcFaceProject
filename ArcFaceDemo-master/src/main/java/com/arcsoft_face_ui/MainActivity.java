@@ -452,11 +452,11 @@ public class MainActivity extends Activity implements OnClickListener {
 		startActivityForResult(it, REQUEST_CODE_OP);
 	}
 
-	private void startDetector(int camera) {
-		Intent it = new Intent(MainActivity.this, DetecterActivity.class);
-		it.putExtra("Camera", camera);
-		startActivityForResult(it, REQUEST_CODE_OP);
-	}
+//	private void startDetector(int camera) {
+//		Intent it = new Intent(MainActivity.this, DetecterActivity.class);
+//		it.putExtra("Camera", camera);
+//		startActivityForResult(it, REQUEST_CODE_OP);
+//	}
 
 
 }

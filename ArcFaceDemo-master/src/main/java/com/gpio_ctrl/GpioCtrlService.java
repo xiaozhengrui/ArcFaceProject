@@ -13,6 +13,16 @@ public class GpioCtrlService {
         System.loadLibrary("GPIOControl");
     }
 
+    public final static boolean openTheDoor(){
+        if(GpioCtrlService.openGpio(254)==true){
+            GpioCtrlService.setGpioDir(254,GpioCtrlService.GPIO_DIRECTION_OUT);
+            GpioCtrlService.setGpioValue(254,GpioCtrlService.GPIO_VALUE_HIGH);
+            GpioCtrlService.closeGpio(254);
+            return true;
+        }
+        return false;
+    }
+
     public final static boolean openGpio(int gpio) {
         return RootCommand("echo "+gpio+" > /sys/class/gpio/export");
     }

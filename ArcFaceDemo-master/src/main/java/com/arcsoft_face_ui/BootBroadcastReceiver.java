@@ -25,7 +25,7 @@ public  class BootBroadcastReceiver extends BroadcastReceiver {
             if (!FsService.isRunning()) {
                 //warnIfNoExternalStorage();
                 //ContextWrapper cWrapper = new ContextWrapper(context);
-                Log.d(TAG, "startService");
+                Log.d(TAG, "startService when boot completed!!");
                 context.startService(serverService);
                 Intent itForMp4 = new Intent();
                 itForMp4.setClass(context,PlayMP4Activity.class);

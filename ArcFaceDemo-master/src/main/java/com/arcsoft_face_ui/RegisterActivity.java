@@ -24,6 +24,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.arc_sdk.FaceDB;
 import com.arcsoft.facedetection.AFD_FSDKEngine;
 import com.arcsoft.facedetection.AFD_FSDKError;
 import com.arcsoft.facedetection.AFD_FSDKFace;
@@ -32,6 +33,7 @@ import com.arcsoft.facerecognition.AFR_FSDKEngine;
 import com.arcsoft.facerecognition.AFR_FSDKError;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKVersion;
+import com.arcsoft_face_ui.Application;
 import com.guo.android_extend.image.ImageConverter;
 import com.guo.android_extend.widget.ExtImageView;
 import com.guo.android_extend.widget.HListView;
@@ -103,10 +105,10 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 				ImageConverter convert = new ImageConverter();
 				convert.initial(mBitmap.getWidth(), mBitmap.getHeight(), ImageConverter.CP_PAF_NV21);
 				if (convert.convert(mBitmap, data)) {
-					Log.d(TAG, "convert ok!");
+					Log.d(TAG, "register convert ok!");
 				}
 				convert.destroy();
-
+				Log.d(TAG, " convert destroy ok!");
 				AFD_FSDKEngine engine = new AFD_FSDKEngine();
 				AFD_FSDKVersion version = new AFD_FSDKVersion();
 				List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();

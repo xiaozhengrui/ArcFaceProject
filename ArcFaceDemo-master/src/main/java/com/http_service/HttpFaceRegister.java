@@ -17,7 +17,7 @@ import com.arcsoft.facerecognition.AFR_FSDKEngine;
 import com.arcsoft.facerecognition.AFR_FSDKError;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKVersion;
-import com.arcsoft_face_ui.FaceDB;
+import com.arc_sdk.FaceDB;
 import com.guo.android_extend.image.ImageConverter;
 
 import org.json.JSONArray;
