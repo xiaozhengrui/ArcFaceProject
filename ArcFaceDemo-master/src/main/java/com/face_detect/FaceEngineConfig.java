@@ -1,6 +1,7 @@
 package com.face_detect;
 
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -38,8 +39,10 @@ import com.sadhana.sdk.Candidate;
 import com.sadhana.sdk.FaceEngine;
 import com.sadhana.sdk.LicenseUtil;
 import com.sadhana.sdk.Person;
+import com.sadhana.sdk.PersonFaceDB;
 import com.sadhana.sdk.Util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -69,6 +72,7 @@ public class FaceEngineConfig extends android.app.Application{
     List<AFT_FSDKFace> mAFT_FSDKFaceList = new ArrayList<>();
     AFT_FSDKFace mAFT_FSDKFace = null;
     public List<FaceDB.FaceRegist> mRegister;
+    public List<PersonFaceDB.FaceRegist> mPersonRegister;
     boolean mUpgrade;
 
     int mFaceIndex=0;
@@ -79,7 +83,7 @@ public class FaceEngineConfig extends android.app.Application{
 
 
     //shangbang engine
-    private FaceEngine mFaceEngine;// = new FaceEngine();
+    private static FaceEngine mFaceEngine = null;// = new FaceEngine();
     private LicenseUtil.ActivateResult mActivateResult;
 
     public static final int CONFIG_ARC = 0;
@@ -99,15 +103,10 @@ public class FaceEngineConfig extends android.app.Application{
         this.mDBPath = mContext.getExternalCacheDir().getPath();
     }
 
-//    public class mFaceRegist {
-//        public String mName;
-//        public List<AFR_FSDKFace> mFaceList;
-//
-//        public mFaceRegist(String name) {
-//            mName = name;
-//            mFaceList = new ArrayList<>();
-//        }
-//    }
+    public static FaceEngine getFaceEngineInstance(){
+        return mFaceEngine;
+    }
+
     public void onActivate() {
         /**
          *  第一步：激活SDK，激活只需在App首次使用时进行。
@@ -156,6 +155,13 @@ public class FaceEngineConfig extends android.app.Application{
         //mDBPath = this.getApplicationContext().getExternalCacheDir().getPath();
         Log.d(TAG,"mDBPath == :"+mDBPath);
         if(configMsg == CONFIG_SHANBANG){
+            mPersonRegister = ((Application)mContext.getApplicationContext()).mPersonFaceDB.mRegister;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    ((Application)mContext.getApplicationContext()).mPersonFaceDB.loadFaces();
+                }
+            }).start();
             int error = mFaceEngine.initialize(mContext.getAssets(), "sadhana_base.model");
             if (error == 0) {
                 Log.d(TAG,"初始化人脸引擎成功!");
@@ -214,6 +220,8 @@ public class FaceEngineConfig extends android.app.Application{
 
             AFR_FSDKError error = mFREngine.AFR_FSDK_UninitialEngine();
             Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
+        }else if(configMsg == CONFIG_SHANBANG){
+            mFaceEngine.release();
         }
     }
 
@@ -225,10 +233,10 @@ public class FaceEngineConfig extends android.app.Application{
              */
 
             // 从数据库中加载特征集合
-            List<Person> list = loadPersons();
-            Person[] persons = new Person[list.size()];
-            list.toArray(persons);
-
+//            List<Person> list = loadFace();
+//            Person[] persons = new Person[list.size()];
+//            list.toArray(persons);
+            byte[] feature =null;
             try {
                 // 提取现场照中人脸特征
                 //InputStream is = getAssets().open("test.jpg");
@@ -237,29 +245,31 @@ public class FaceEngineConfig extends android.app.Application{
                 op.inJustDecodeBounds = false;
                 Bitmap bmp = BitmapFactory.decodeFile(imgPath, op);
 
-
-//            Bitmap bmp = BitmapFactory.decodeStream(is);
-//            is.close();
                 byte[] bgr = Util.getPixelsBGR(bmp);
                 int width = bmp.getWidth();
                 int height = bmp.getHeight();
-                byte[] feature = mFaceEngine.extractFeature(bgr, width, height);
+                feature = mFaceEngine.extractFeature(bgr, width, height);
                 if (feature == null) {
                     Log.e(TAG, "Extract feature failed");
                     return false;
                 }
-
-                // 进行识别
-                Candidate candidate = mFaceEngine.identify(feature, persons, 0.9f);
-                Log.d(TAG, String.format("找到人员 ID = %s , 相似度: %f", candidate.getId(), candidate.getSimilarity()));
-                if(candidate.getSimilarity() > 0.9f){
-                    GpioCtrlService.openTheDoor();
-                    return true;
-                }
-                //Toast.makeText(this, String.format("找到人员 ID = %s , 相似度: %f", candidate.getId(), candidate.getSimilarity()), Toast.LENGTH_LONG).show();
-
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+            for(PersonFaceDB.FaceRegist regist:mPersonRegister){
+                Person[] persons = new Person[regist.mFaceList.size()];
+                regist.mFaceList.toArray(persons);
+                // 进行识别
+                Candidate candidate = mFaceEngine.identify(feature, persons, 0.9f);
+                if(candidate == null){
+                    Log.d(TAG, String.format("未找到人员 ID!!"));
+                }else{
+                    Log.d(TAG, String.format("找到人员 ID = %s , 相似度: %f", candidate.getId(), candidate.getSimilarity()));
+                    if(candidate.getSimilarity() > 0.9f){
+                        GpioCtrlService.openTheDoor();
+                        return true;
+                    }
+                }
             }
             return false;
         }else if(configMsg == CONFIG_ARC){
@@ -277,13 +287,13 @@ public class FaceEngineConfig extends android.app.Application{
             }
             Log.d(TAG,"getFtpClientCurrentData path:"+imgPath);
             //long time = System.currentTimeMillis();
-//            BitmapFactory.Options op = new BitmapFactory.Options();
-//            op.inJustDecodeBounds = true;
-//            BitmapFactory.decodeFile(imgPath,op);
-//            Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
-//            op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
-//            op.inJustDecodeBounds = false;
-//            bmp = BitmapFactory.decodeFile(imgPath,op);
+            BitmapFactory.Options op = new BitmapFactory.Options();
+            op.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(imgPath,op);
+            Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
+            op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
+            op.inJustDecodeBounds = false;
+            bmp = BitmapFactory.decodeFile(imgPath,op);
             bmp = BitmapFactory.decodeFile(imgPath);
             if(bmp == null){
                 return false;
@@ -298,15 +308,9 @@ public class FaceEngineConfig extends android.app.Application{
             if (convert.convert(bmp, ImageData)) {
                 Log.d(TAG, "convert ok!");
             }
-            Log.d(TAG, "start to detect111!");
             bmp = null;
-            //convert.destroy();//so reason cause the leap,so mark it,2018.10.14
+            convert.destroy();//so reason cause the leap,so mark it,2018.10.14
 
-//            AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
-//            Log.d(TAG, "AFT_FSDK_InitialFaceEngine2 =" + err.getCode());
-//            err = engine.AFT_FSDK_GetVersion(version);
-//            Log.d(TAG, "AFT_FSDK_GetVersion2:" + version.toString() + "," + err.getCode());
-            Log.d(TAG, "start to detect222!");
             AFT_FSDKError err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
             Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
             Log.d(TAG, "Face=" + result.size());
@@ -323,11 +327,6 @@ public class FaceEngineConfig extends android.app.Application{
                 mWidth = width;
                 mHeight = height;
             }
-//            AFT_FSDKError error = engine.AFT_FSDK_UninitialFaceEngine();
-//            Log.d(TAG, "AFT_FSDK_UninitialFaceEngine2 : " + error.getCode());
-//            for (AFT_FSDKFace face : result) {
-//                Log.d(TAG, "Face:" + face.toString());
-//            }
             Log.d(TAG,"detect face cost:"+(System.currentTimeMillis()-time)+"ms");
             if(mAFT_FSDKFaceList.size()> mFaceIndex){
                 mImageNV21 = mImageFtp.clone();
@@ -414,48 +413,6 @@ public class FaceEngineConfig extends android.app.Application{
             inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
         }
         return inSampleSize;
-    }
-
-    protected List<Person> loadPersons() {
-        List<Person> persons = new ArrayList<>();
-
-        String path = mContext.getFilesDir().getAbsolutePath() + "/demo.db";
-        try {
-            FileOutputStream outputStream = new FileOutputStream(path);
-            //InputStream inputStream = getAssets().open("demo.db");
-            FileInputStream inputStream = new FileInputStream(mDBPath + "/demo.db");
-            byte[] buf = new byte[40960];
-            int n = 0;
-            do {
-                n = inputStream.read(buf);
-                if (n > 0)
-                    outputStream.write(buf, 0, n);
-            } while (n > 0);
-            inputStream.close();
-            outputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(path,null);
-        Cursor cursor = db.query("t_person", null, null, null, null, null, "id");
-        if (cursor.moveToFirst()) {
-            do {
-                long id = cursor.getLong(0);
-                String name = cursor.getString(1);
-                byte[] image = cursor.getBlob(2);
-                Bitmap bmp = BitmapFactory.decodeByteArray(image, 0, image.length);
-                byte[] feature = cursor.getBlob(3);
-                Person person = new Person(Long.toString(id), feature);
-                persons.add(person);
-            } while (cursor.moveToNext());
-            cursor.close();
-        }
-        db.close();
-
-        return persons;
     }
 
 

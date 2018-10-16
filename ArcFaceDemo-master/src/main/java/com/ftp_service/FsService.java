@@ -66,34 +66,14 @@ import com.guo.android_extend.java.AbsLoop;
 
 public class FsService extends Service implements Runnable {
     private static final String TAG = FsService.class.getSimpleName();
-    static public final String ACTION_DETECT_STARTED = "com.ftp.FTPSERVER_DETECT_STARTED";
     // Service will (global) broadcast when server start/stop
     static public final String ACTION_STARTED = "com.ftp.FTPSERVER_STARTED";
     static public final String ACTION_STOPPED = "com.ftp.FTPSERVER_STOPPED";
     static public final String ACTION_FAILEDTOSTART = "com.ftp.FTPSERVER_FAILEDTOSTART";
 
-    // RequestStartStopReceiver listens for these actions to start/stop this server
-    static public final String ACTION_START_FTPSERVER = "com.ftp.ACTION_START_FTPSERVER";
-    static public final String ACTION_STOP_FTPSERVER = "com.ftp.ACTION_STOP_FTPSERVER";
 
     protected static Thread serverThread = null;
     protected boolean shouldExit = false;
-//    AFT_FSDKVersion version = new AFT_FSDKVersion();
-//    AFT_FSDKEngine engine = new AFT_FSDKEngine();
-//    ASAE_FSDKVersion mAgeVersion = new ASAE_FSDKVersion();
-//    ASAE_FSDKEngine mAgeEngine = new ASAE_FSDKEngine();
-//    ASGE_FSDKVersion mGenderVersion = new ASGE_FSDKVersion();
-//    ASGE_FSDKEngine mGenderEngine = new ASGE_FSDKEngine();
-//    List<AFT_FSDKFace> result = new ArrayList<>();
-//    List<ASAE_FSDKAge> ages = new ArrayList<>();
-//    List<ASGE_FSDKGender> genders = new ArrayList<>();
-//
-//    byte[] mImageNV21 = null;
-//    byte[] mImageFtp = null;
-//    int mFaceIndex=0;
-//    List<AFT_FSDKFace> mAFT_FSDKFaceList = new ArrayList<>();
-//
-//    AFT_FSDKFace mAFT_FSDKFace = null;
     FRAbsLoop mFRAbsLoop = null;
 //    private int mWidth, mHeight;
     long time;
@@ -118,25 +98,9 @@ public class FsService extends Service implements Runnable {
         Log.d(TAG,"service onCreate");
         fileCount = Environment.getExternalStorageDirectory().listFiles().length;
 
-        faceEngineConfig = new FaceEngineConfig(FaceEngineConfig.CONFIG_ARC,this);
+        faceEngineConfig = new FaceEngineConfig(FaceEngineConfig.CONFIG_SHANBANG,this);
         faceEngineConfig.onActivate();
         faceEngineConfig.onInitialize();
-
-        //start detect when receive broadcast,so mark it
-//        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
-//        Log.d(TAG, "AFT_FSDK_InitialFaceEngine =" + err.getCode());
-//        err = engine.AFT_FSDK_GetVersion(version);
-//        Log.d(TAG, "AFT_FSDK_GetVersion:" + version.toString() + "," + err.getCode());
-//
-//        ASAE_FSDKError error = mAgeEngine.ASAE_FSDK_InitAgeEngine(FaceDB.appid, FaceDB.age_key);
-//        Log.d(TAG, "ASAE_FSDK_InitAgeEngine =" + error.getCode());
-//        error = mAgeEngine.ASAE_FSDK_GetVersion(mAgeVersion);
-//        Log.d(TAG, "ASAE_FSDK_GetVersion:" + mAgeVersion.toString() + "," + error.getCode());
-//
-//        ASGE_FSDKError error1 = mGenderEngine.ASGE_FSDK_InitgGenderEngine(FaceDB.appid, FaceDB.gender_key);
-//        Log.d(TAG, "ASGE_FSDK_InitgGenderEngine =" + error1.getCode());
-//        error1 = mGenderEngine.ASGE_FSDK_GetVersion(mGenderVersion);
-//        Log.d(TAG, "ASGE_FSDK_GetVersion:" + mGenderVersion.toString() + "," + error1.getCode());
     }
 
     @Override
@@ -218,15 +182,6 @@ public class FsService extends Service implements Runnable {
 
         mFRAbsLoop.shutdown();
         faceEngineConfig.onReleaseEngine();
-//        AFT_FSDKError err = engine.AFT_FSDK_UninitialFaceEngine();
-//        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine =" + err.getCode());
-//
-//        ASAE_FSDKError err1 = mAgeEngine.ASAE_FSDK_UninitAgeEngine();
-//        Log.d(TAG, "ASAE_FSDK_UninitAgeEngine =" + err1.getCode());
-//
-//        ASGE_FSDKError err2 = mGenderEngine.ASGE_FSDK_UninitGenderEngine();
-//        Log.d(TAG, "ASGE_FSDK_UninitGenderEngine =" + err2.getCode());
-//        Log.d(TAG, "FTPServerService.onDestroy() finished");
     }
 
     // This opens a listening socket on all interfaces.
@@ -241,12 +196,6 @@ public class FsService extends Service implements Runnable {
         Log.d(TAG, "Server thread running");
         mFRAbsLoop = new FRAbsLoop();
         mFRAbsLoop.start();
-        /*if (isConnectedToLocalNetwork() == false) {
-            Log.w(TAG, "run: There is no local network, bailing out");
-            stopSelf();
-            sendBroadcast(new Intent(ACTION_FAILEDTOSTART));
-            return;
-        }*/
 
         // Initialization of wifi, set up the socket
         try {
@@ -463,77 +412,6 @@ public class FsService extends Service implements Runnable {
 
 
 
-    private static void encodeYUV420SP(byte[] yuv420sp, int[] argb, int width,
-                                       int height) {
-        // 帧图片的像素大小
-        final int frameSize = width * height;
-        // ---YUV数据---
-        int Y, U, V;
-        // Y的index从0开始
-        int yIndex = 0;
-        // UV的index从frameSize开始
-        int uvIndex = frameSize;
-
-        // ---颜色数据---
-        int a, R, G, B;
-        //
-        int argbIndex = 0;
-        //
-
-        // ---循环所有像素点，RGB转YUV---
-        for (int j = 0; j < height; j++) {
-            for (int i = 0; i < width; i++) {
-
-                // a is not used obviously
-                a = (argb[argbIndex] & 0xff000000) >> 24;
-                R = (argb[argbIndex] & 0xff0000) >> 16;
-                G = (argb[argbIndex] & 0xff00) >> 8;
-                B = (argb[argbIndex] & 0xff);
-                //
-                argbIndex++;
-
-                // well known RGB to YUV algorithm
-                Y = ((66 * R + 129 * G + 25 * B + 128) >> 8) + 16;
-                U = ((-38 * R - 74 * G + 112 * B + 128) >> 8) + 128;
-                V = ((112 * R - 94 * G - 18 * B + 128) >> 8) + 128;
-
-                //
-                Y = Math.max(0, Math.min(Y, 255));
-                U = Math.max(0, Math.min(U, 255));
-                V = Math.max(0, Math.min(V, 255));
-
-                // NV21 has a plane of Y and interleaved planes of VU each
-                // sampled by a factor of 2
-                // meaning for every 4 Y pixels there are 1 V and 1 U. Note the
-                // sampling is every other
-                // pixel AND every other scanline.
-                // ---Y---
-                yuv420sp[yIndex++] = (byte) Y;
-                // ---UV---
-                if ((j % 2 == 0) && (i % 2 == 0)) {
-                    //
-                    yuv420sp[uvIndex++] = (byte) V;
-                    //
-                    yuv420sp[uvIndex++] = (byte) U;
-                }
-            }
-        }
-
-    }
-
-
-//    public void getFaceDB(){
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                Application app = (Application) FsService.this.getApplicationContext();
-//                app.mFaceDB.loadFaces();
-//                //mark http register,xiao 2018.9.23
-//                //HttpFaceRegister register = new HttpFaceRegister(FsService.this);
-//                //register.getImageFromHttp();
-//            }
-//        }).start();
-//    }
 
 
     private void FtpPathScan(String scanPath){
@@ -552,222 +430,24 @@ public class FsService extends Service implements Runnable {
     }
 
 
-//    public Object getFtpClientCurrentData(String filePath){
-//        int width,height;
-//        Bitmap bmp;
-//
-//        if(!filePath.contains(".jpg")){
-//            return null;
-//        }
-//        Log.d(TAG,"getFtpClientCurrentData path:"+filePath);
-//        //long time = System.currentTimeMillis();
-//        BitmapFactory.Options op = new BitmapFactory.Options();
-//        op.inJustDecodeBounds = true;
-//        BitmapFactory.decodeFile(filePath,op);
-//        Log.d(TAG,"pre_decode w:"+op.outWidth+" h:"+op.outHeight+" mime:"+op.outMimeType);
-//        op.inSampleSize = calculateInSampleSize(op, 1920, 1080);
-//        op.inJustDecodeBounds = false;
-//        bmp = BitmapFactory.decodeFile(filePath,op);
-//        if(bmp == null){
-//            return null;
-//        }
-//        Log.d(TAG,"bmp.getWidth():"+bmp.getWidth()+" bmp.getHeight():"+bmp.getHeight());
-//        width = bmp.getWidth();
-//        height = bmp.getHeight();
-//
-//        byte[] ImageData = new byte[width * height * 3 / 2];
-//        ImageConverter convert = new ImageConverter();
-//        convert.initial(width, height, ImageConverter.CP_PAF_NV21);
-//        if (convert.convert(bmp, ImageData)) {
-//            Log.d(TAG, "convert ok!");
-//        }
-//        convert.destroy();
-//
-//        AFT_FSDKError err = engine.AFT_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.ft_key, AFT_FSDKEngine.AFT_OPF_0_HIGHER_EXT, 16, 25);
-//        Log.d(TAG, "AFT_FSDK_InitialFaceEngine2 =" + err.getCode());
-//        err = engine.AFT_FSDK_GetVersion(version);
-//        Log.d(TAG, "AFT_FSDK_GetVersion2:" + version.toString() + "," + err.getCode());
-//
-//        err = engine.AFT_FSDK_FaceFeatureDetect(ImageData, width, height, AFT_FSDKEngine.CP_PAF_NV21, result);
-//        Log.d(TAG, "AFT_FSDK_FaceFeatureDetect =" + err.getCode());
-//        Log.d(TAG, "Face=" + result.size());
-//        if(result.size() == 0){
-//            Message msg = new Message();
-//            msg.what = 0x002;
-//            handler.sendMessage(msg);
-//        }else{
-//            for (AFT_FSDKFace rt : result) {
-//                mAFT_FSDKFaceList.add(rt.clone());
-//            }
-//            result.clear();
-//            mImageFtp = ImageData.clone();
-//            mWidth = width;
-//            mHeight = height;
-//        }
-//        AFT_FSDKError error = engine.AFT_FSDK_UninitialFaceEngine();
-//        Log.d(TAG, "AFT_FSDK_UninitialFaceEngine2 : " + error.getCode());
-//        for (AFT_FSDKFace face : result) {
-//            Log.d(TAG, "Face:" + face.toString());
-//        }
-//        Log.d(TAG,"detect face cost:"+(System.currentTimeMillis()-time)+"ms");
-//        return null;
-//    }
-
-
-    public static int calculateInSampleSize(BitmapFactory.Options options,
-                                            int reqWidth, int reqHeight) {
-        // 源图片的高度和宽度
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
-        if (height > reqHeight || width > reqWidth) {
-            // 计算出实际宽高和目标宽高的比率
-            final int heightRatio = Math.round((float) height / (float) reqHeight);
-            final int widthRatio = Math.round((float) width / (float) reqWidth);
-            // 选择宽和高中最小的比率作为inSampleSize的值，这样可以保证最终图片的宽和高
-            // 一定都会大于等于目标的宽和高。
-            inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
-        }
-        return inSampleSize;
-    }
 
     class FRAbsLoop extends AbsLoop {
-
-//        AFR_FSDKVersion version = new AFR_FSDKVersion();
-//        AFR_FSDKEngine engine = new AFR_FSDKEngine();
-//        AFR_FSDKFace result = new AFR_FSDKFace();
-//        List<FaceDB.FaceRegist> mResgist = ((Application)FsService.this.getApplicationContext()).mFaceDB.mRegister;
-//
-//        List<ASAE_FSDKFace> face1 = new ArrayList<>();
-//        List<ASGE_FSDKFace> face2 = new ArrayList<>();
-
         @Override
         public void setup() {
-//            Log.d(TAG,"FsService setup");
-//            AFR_FSDKError error = engine.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
-//            Log.d(TAG, "AFR_FSDK_InitialEngine = " + error.getCode());
-//
-//            error = engine.AFR_FSDK_GetVersion(version);
-//            Log.d(TAG, "FR=" + version.toString() + "," + error.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
-//            getFaceDB();
+
         }
-
-
 
         @Override
         public void loop() {
             FtpPathScan(Environment.getExternalStorageDirectory().toString());
-//            if(mAFT_FSDKFaceList.size()> mFaceIndex){
-//                mImageNV21 = mImageFtp.clone();
-//                mAFT_FSDKFace = mAFT_FSDKFaceList.get(mFaceIndex).clone();
-//                mFaceIndex++;
-//                if(mFaceIndex == mAFT_FSDKFaceList.size()){
-//                    mAFT_FSDKFaceList.clear();
-//                    mFaceIndex = 0;
-//                }
-//            }
-//            if (mImageNV21 != null) {
-//                long time1 = System.currentTimeMillis();
-//                time = System.currentTimeMillis();
-//                Log.d(TAG,"AFR_FSDK_ExtractFRFeature is ok");
-//                AFR_FSDKError error = engine.AFR_FSDK_ExtractFRFeature(mImageNV21, mWidth, mHeight, AFR_FSDKEngine.CP_PAF_NV21, mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree(), result);
-//                Log.d(TAG, "AFR_FSDK_ExtractFRFeature cost :" + (System.currentTimeMillis() - time1) + "ms");
-//                Log.d(TAG, "Face=" + result.getFeatureData()[0] + "," + result.getFeatureData()[1] + "," + result.getFeatureData()[2] + "," + error.getCode());
-//                AFR_FSDKMatching score = new AFR_FSDKMatching();
-//                float max = 0.0f;
-//                String name = null;
-//                time1 = System.currentTimeMillis();
-//                for (FaceDB.FaceRegist fr : mResgist) {
-//                    for (AFR_FSDKFace face : fr.mFaceList) {
-//                        error = engine.AFR_FSDK_FacePairMatching(result, face, score);
-//
-//                        Log.d(TAG,  "Score:" + score.getScore() + ", AFR_FSDK_FacePairMatching=" + error.getCode());
-//                        if (max < score.getScore()) {
-//                            max = score.getScore();
-//                            name = fr.mName;
-//                        }
-//                    }
-//                }
-//                Log.d(TAG, "AFR_FSDK_FacePairMatching cost :" + (System.currentTimeMillis() - time1) + "ms");
-//                //age & gender
-//                face1.clear();
-//                face2.clear();
-//                face1.add(new ASAE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-//                face2.add(new ASGE_FSDKFace(mAFT_FSDKFace.getRect(), mAFT_FSDKFace.getDegree()));
-//                ASAE_FSDKError error1 = mAgeEngine.ASAE_FSDK_AgeEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face1, ages);
-//                ASGE_FSDKError error2 = mGenderEngine.ASGE_FSDK_GenderEstimation_Image(mImageNV21, mWidth, mHeight, AFT_FSDKEngine.CP_PAF_NV21, face2, genders);
-//                Log.d(TAG, "ASAE_FSDK_AgeEstimation_Image:" + error1.getCode() + ",ASGE_FSDK_GenderEstimation_Image:" + error2.getCode());
-//                Log.d(TAG, "age:" + ages.get(0).getAge() + ",gender:" + genders.get(0).getGender());
-//                final String age = ages.get(0).getAge() == 0 ? "年龄未知" : ages.get(0).getAge() + "岁";
-//                final String gender = genders.get(0).getGender() == -1 ? "性别未知" : (genders.get(0).getGender() == 0 ? "男" : "女");
-//
-//                //crop
-//                byte[] data = mImageNV21;
-//                Log.d(TAG,"rect 1:"+mWidth+" "+mHeight);
-//                Log.d(TAG,"rect 2:"+mAFT_FSDKFace.getRect());
-//                Rect rect = new Rect(0, 0, mWidth, mHeight);
-//                if(rect.contains(mAFT_FSDKFace.getRect())) {
-//                    /*YuvImage yuv = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
-//                    ExtByteArrayOutputStream ops = new ExtByteArrayOutputStream();
-//                    yuv.compressToJpeg(mAFT_FSDKFace.getRect(), 80, ops);
-//                    final Bitmap bmp = BitmapFactory.decodeByteArray(ops.getByteArray(), 0, ops.getByteArray().length);
-//
-//                    try {
-//                        ops.close();
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }*/
-//                }
-//                Log.d(TAG, "max fit Score:" + max);
-//                if (max > 0.6f) {
-//                    //fr success.
-//                    final float max_score = max;
-//                    Log.d(TAG, "fit Score:" + max + ", NAME:" + name);
-//                    final String mNameShow = name;
-//                    mAFT_FSDKFaceList.clear();//clear face list when checked!!
-//                    mFaceIndex =  0;
-//                    Message msg = new Message();
-//                    msg.what = 0x001;
-//                    Bundle bd = new Bundle();
-//                    bd.putString("name",mNameShow);
-//                    double fscroe = (float) ((int) (max_score * 1000)) / 1000.0;
-//                    bd.putFloat("score", (float)fscroe);
-//                    msg.setData(bd);
-//                    handler.sendMessage(msg);
-//                    Log.d(TAG, "check face ok cost :" + (System.currentTimeMillis() - time) + "ms");
-//                }
-//                mImageNV21 = null;
-//            }
         }
 
         @Override
         public void over() {
             Log.d(TAG,"FsService over!");
-//            AFR_FSDKError error = engine.AFR_FSDK_UninitialEngine();
-//            Log.d(TAG, "AFR_FSDK_UninitialEngine : " + error.getCode());
         }
     }
 
-
-    private  Handler handler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            if (msg.what == 0x001) {
-                Log.d(TAG,"check face successful!");
-                String name = msg.getData().getString("name");
-                Float fScore = msg.getData().getFloat("score");
-                if(GpioCtrlService.openGpio(254)==true){
-                    GpioCtrlService.setGpioDir(254,GpioCtrlService.GPIO_DIRECTION_OUT);
-                    GpioCtrlService.setGpioValue(254,GpioCtrlService.GPIO_VALUE_HIGH);
-                    GpioCtrlService.closeGpio(254);
-                }
-                Toast.makeText(FsService.this.getApplicationContext(),"姓名"+name+" 置信度："+ fScore ,Toast.LENGTH_SHORT).show();
-            }else if(msg.what == 0x002){
-                Toast.makeText(FsService.this,"未检测到人脸",Toast.LENGTH_SHORT).show();
-            }
-            return false;
-        }
-    });
 
 
     public static Handler mHandler = new Handler(new Handler.Callback() {

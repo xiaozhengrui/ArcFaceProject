@@ -1,5 +1,7 @@
 package com.sadhana.sdk;
 
+import java.util.ArrayList;
+
 public class Person {
     /**
      *  人员标识
@@ -10,6 +12,7 @@ public class Person {
      *  人脸特征
      */
     private byte[] mFeature;
+
 
     public Person(String id, byte[] feature) {
         mId = String.format("%s", id);

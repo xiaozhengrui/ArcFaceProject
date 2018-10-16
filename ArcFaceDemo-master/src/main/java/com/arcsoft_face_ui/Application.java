@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.arc_sdk.FaceDB;
+import com.sadhana.sdk.PersonFaceDB;
 
 /**
  * Created by gqj3375 on 2017/4/28.
@@ -17,12 +18,14 @@ import com.arc_sdk.FaceDB;
 public class Application extends android.app.Application {
 	private final String TAG = this.getClass().toString();
 	public FaceDB mFaceDB;
+	public PersonFaceDB mPersonFaceDB;
 	Uri mImage;
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
 		mFaceDB = new FaceDB(this.getExternalCacheDir().getPath());
+		mPersonFaceDB = new PersonFaceDB(this.getExternalCacheDir().getPath(),this);
 		mImage = null;
 	}
 

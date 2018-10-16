@@ -34,9 +34,14 @@ import com.arcsoft.facerecognition.AFR_FSDKError;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKVersion;
 import com.arcsoft_face_ui.Application;
+import com.face_detect.FaceEngineConfig;
 import com.guo.android_extend.image.ImageConverter;
 import com.guo.android_extend.widget.ExtImageView;
 import com.guo.android_extend.widget.HListView;
+import com.sadhana.sdk.FaceEngine;
+import com.sadhana.sdk.Person;
+import com.sadhana.sdk.PersonFaceDB;
+import com.sadhana.sdk.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +73,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 	private HListView mHListView;
 	private RegisterViewAdapter mRegisterViewAdapter;
 	private AFR_FSDKFace mAFR_FSDKFace;
+	private Person mPerson;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -101,114 +107,163 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 					}
 				}
 
-				byte[] data = new byte[mBitmap.getWidth() * mBitmap.getHeight() * 3 / 2];
-				ImageConverter convert = new ImageConverter();
-				convert.initial(mBitmap.getWidth(), mBitmap.getHeight(), ImageConverter.CP_PAF_NV21);
-				if (convert.convert(mBitmap, data)) {
-					Log.d(TAG, "register convert ok!");
-				}
-				convert.destroy();
-				Log.d(TAG, " convert destroy ok!");
-				AFD_FSDKEngine engine = new AFD_FSDKEngine();
-				AFD_FSDKVersion version = new AFD_FSDKVersion();
-				List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
-				AFD_FSDKError err = engine.AFD_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.fd_key, AFD_FSDKEngine.AFD_OPF_0_HIGHER_EXT, 16, 5);
-				Log.d(TAG, "AFD_FSDK_InitialFaceEngine = " + err.getCode());
-				if (err.getCode() != AFD_FSDKError.MOK) {
+				FaceEngine mFaceEngine = FaceEngineConfig.getFaceEngineInstance();
+				Rect drawRect = null;
+				List<AFD_FSDKFace> result = null;
+				if(mFaceEngine != null){
+					Log.d(TAG,"getFaceEngineInstance ok!!");
+					byte[] bgr = Util.getPixelsBGR(mBitmap);
+					int width = mBitmap.getWidth();
+					int height = mBitmap.getHeight();
+					byte[] feature = mFaceEngine.extractFeature(bgr, width, height);
+					if (feature == null) {
+						Log.e(TAG, "Extract feature failed");
+						Message reg = Message.obtain();
+						reg.what = MSG_CODE;
+						reg.arg1 = MSG_EVENT_FD_ERROR;
+						reg.arg2 = -1;
+						mUIHandler.sendMessage(reg);
+						return;
+					}
+					drawRect = new Rect();
+					drawRect.set(0,0,width,height);
+					int pId = ((Application)RegisterActivity.this.getApplicationContext()).mPersonFaceDB.mRegister.size();
+					mPerson = new Person(Integer.toString(pId+1),feature);
+					List<Rect> rects = new ArrayList<>();
+					rects.add(drawRect);
+					registerDraw(rects);
+
+					Bitmap face_bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+					Canvas face_canvas = new Canvas(face_bitmap);
+					face_canvas.drawBitmap(mBitmap, drawRect, new Rect(0, 0, width, height), null);
 					Message reg = Message.obtain();
 					reg.what = MSG_CODE;
-					reg.arg1 = MSG_EVENT_FD_ERROR;
-					reg.arg2 = err.getCode();
+					reg.arg1 = MSG_EVENT_REG;
+					reg.obj = face_bitmap;
 					mUIHandler.sendMessage(reg);
-				}
-				err = engine.AFD_FSDK_GetVersion(version);
-				Log.d(TAG, "AFD_FSDK_GetVersion =" + version.toString() + ", " + err.getCode());
-				err  = engine.AFD_FSDK_StillImageFaceDetection(data, mBitmap.getWidth(), mBitmap.getHeight(), AFD_FSDKEngine.CP_PAF_NV21, result);
-				Log.d(TAG, "AFD_FSDK_StillImageFaceDetection =" + err.getCode() + "<" + result.size());
-				while (mSurfaceHolder != null) {
-					Canvas canvas = mSurfaceHolder.lockCanvas();
-					if (canvas != null) {
-						Paint mPaint = new Paint();
-						boolean fit_horizontal = canvas.getWidth() / (float)src.width() < canvas.getHeight() / (float)src.height() ? true : false;
-						float scale = 1.0f;
-						if (fit_horizontal) {
-							scale = canvas.getWidth() / (float)src.width();
-							dst.left = 0;
-							dst.top = (canvas.getHeight() - (int)(src.height() * scale)) / 2;
-							dst.right = dst.left + canvas.getWidth();
-							dst.bottom = dst.top + (int)(src.height() * scale);
+				}else{//use arc sdk
+					Log.d(TAG,"getFaceEngineInstance fail,use arc sdk!!");
+					/****for arc sdk****/
+					byte[] data = new byte[mBitmap.getWidth() * mBitmap.getHeight() * 3 / 2];
+					ImageConverter convert = new ImageConverter();
+					convert.initial(mBitmap.getWidth(), mBitmap.getHeight(), ImageConverter.CP_PAF_NV21);
+					if (convert.convert(mBitmap, data)) {
+						Log.d(TAG, "register convert ok!");
+					}
+					convert.destroy();
+					Log.d(TAG, " convert destroy ok!");
+					AFD_FSDKEngine engine = new AFD_FSDKEngine();
+					AFD_FSDKVersion version = new AFD_FSDKVersion();
+					result = new ArrayList<AFD_FSDKFace>();
+					AFD_FSDKError err = engine.AFD_FSDK_InitialFaceEngine(FaceDB.appid, FaceDB.fd_key, AFD_FSDKEngine.AFD_OPF_0_HIGHER_EXT, 16, 5);
+					Log.d(TAG, "AFD_FSDK_InitialFaceEngine = " + err.getCode());
+					if (err.getCode() != AFD_FSDKError.MOK) {
+						Message reg = Message.obtain();
+						reg.what = MSG_CODE;
+						reg.arg1 = MSG_EVENT_FD_ERROR;
+						reg.arg2 = err.getCode();
+						mUIHandler.sendMessage(reg);
+					}
+					err = engine.AFD_FSDK_GetVersion(version);
+					Log.d(TAG, "AFD_FSDK_GetVersion =" + version.toString() + ", " + err.getCode());
+					err  = engine.AFD_FSDK_StillImageFaceDetection(data, mBitmap.getWidth(), mBitmap.getHeight(), AFD_FSDKEngine.CP_PAF_NV21, result);
+					Log.d(TAG, "AFD_FSDK_StillImageFaceDetection =" + err.getCode() + "<" + result.size());
+					List<Rect> rects = new ArrayList<>();
+					for(AFD_FSDKFace face:result){
+						rects.add(face.getRect());
+					}
+					registerDraw(rects);
+					if (!result.isEmpty()) {
+						AFR_FSDKVersion version1 = new AFR_FSDKVersion();
+						AFR_FSDKEngine engine1 = new AFR_FSDKEngine();
+						AFR_FSDKFace result1 = new AFR_FSDKFace();
+						AFR_FSDKError error1 = engine1.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
+						Log.d("com.arcsoft", "AFR_FSDK_InitialEngine = " + error1.getCode());
+						if (error1.getCode() != AFD_FSDKError.MOK) {
+							Message reg = Message.obtain();
+							reg.what = MSG_CODE;
+							reg.arg1 = MSG_EVENT_FR_ERROR;
+							reg.arg2 = error1.getCode();
+							mUIHandler.sendMessage(reg);
+						}
+						error1 = engine1.AFR_FSDK_GetVersion(version1);
+						Log.d("com.arcsoft", "FR=" + version.toString() + "," + error1.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
+						error1 = engine1.AFR_FSDK_ExtractFRFeature(data, mBitmap.getWidth(), mBitmap.getHeight(), AFR_FSDKEngine.CP_PAF_NV21, new Rect(result.get(0).getRect()), result.get(0).getDegree(), result1);
+						Log.d("com.arcsoft", "Face=" + result1.getFeatureData()[0] + "," + result1.getFeatureData()[1] + "," + result1.getFeatureData()[2] + "," + error1.getCode());
+						if(error1.getCode() == error1.MOK) {
+							mAFR_FSDKFace = result1.clone();
+							int width = result.get(0).getRect().width();
+							int height = result.get(0).getRect().height();
+							Bitmap face_bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+							Canvas face_canvas = new Canvas(face_bitmap);
+							face_canvas.drawBitmap(mBitmap, result.get(0).getRect(), new Rect(0, 0, width, height), null);
+							Message reg = Message.obtain();
+							reg.what = MSG_CODE;
+							reg.arg1 = MSG_EVENT_REG;
+							reg.obj = face_bitmap;
+							mUIHandler.sendMessage(reg);
 						} else {
-							scale = canvas.getHeight() / (float)src.height();
-							dst.left = (canvas.getWidth() - (int)(src.width() * scale)) / 2;
-							dst.top = 0;
-							dst.right = dst.left + (int)(src.width() * scale);
-							dst.bottom = dst.top + canvas.getHeight();
+							Message reg = Message.obtain();
+							reg.what = MSG_CODE;
+							reg.arg1 = MSG_EVENT_NO_FEATURE;
+							mUIHandler.sendMessage(reg);
 						}
-						canvas.drawBitmap(mBitmap, src, dst, mPaint);
-						canvas.save();
-						canvas.scale((float) dst.width() / (float) src.width(), (float) dst.height() / (float) src.height());
-						canvas.translate(dst.left / scale, dst.top / scale);
-						for (AFD_FSDKFace face : result) {
-							mPaint.setColor(Color.RED);
-							mPaint.setStrokeWidth(10.0f);
-							mPaint.setStyle(Paint.Style.STROKE);
-							canvas.drawRect(face.getRect(), mPaint);
-						}
-						canvas.restore();
-						mSurfaceHolder.unlockCanvasAndPost(canvas);
-						break;
-					}
-				}
-
-				if (!result.isEmpty()) {
-					AFR_FSDKVersion version1 = new AFR_FSDKVersion();
-					AFR_FSDKEngine engine1 = new AFR_FSDKEngine();
-					AFR_FSDKFace result1 = new AFR_FSDKFace();
-					AFR_FSDKError error1 = engine1.AFR_FSDK_InitialEngine(FaceDB.appid, FaceDB.fr_key);
-					Log.d("com.arcsoft", "AFR_FSDK_InitialEngine = " + error1.getCode());
-					if (error1.getCode() != AFD_FSDKError.MOK) {
-						Message reg = Message.obtain();
-						reg.what = MSG_CODE;
-						reg.arg1 = MSG_EVENT_FR_ERROR;
-						reg.arg2 = error1.getCode();
-						mUIHandler.sendMessage(reg);
-					}
-					error1 = engine1.AFR_FSDK_GetVersion(version1);
-					Log.d("com.arcsoft", "FR=" + version.toString() + "," + error1.getCode()); //(210, 178 - 478, 446), degree = 1　780, 2208 - 1942, 3370
-					error1 = engine1.AFR_FSDK_ExtractFRFeature(data, mBitmap.getWidth(), mBitmap.getHeight(), AFR_FSDKEngine.CP_PAF_NV21, new Rect(result.get(0).getRect()), result.get(0).getDegree(), result1);
-					Log.d("com.arcsoft", "Face=" + result1.getFeatureData()[0] + "," + result1.getFeatureData()[1] + "," + result1.getFeatureData()[2] + "," + error1.getCode());
-					if(error1.getCode() == error1.MOK) {
-						mAFR_FSDKFace = result1.clone();
-						int width = result.get(0).getRect().width();
-						int height = result.get(0).getRect().height();
-						Bitmap face_bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-						Canvas face_canvas = new Canvas(face_bitmap);
-						face_canvas.drawBitmap(mBitmap, result.get(0).getRect(), new Rect(0, 0, width, height), null);
-						Message reg = Message.obtain();
-						reg.what = MSG_CODE;
-						reg.arg1 = MSG_EVENT_REG;
-						reg.obj = face_bitmap;
-						mUIHandler.sendMessage(reg);
+						error1 = engine1.AFR_FSDK_UninitialEngine();
+						Log.d("com.arcsoft", "AFR_FSDK_UninitialEngine : " + error1.getCode());
 					} else {
 						Message reg = Message.obtain();
 						reg.what = MSG_CODE;
-						reg.arg1 = MSG_EVENT_NO_FEATURE;
+						reg.arg1 = MSG_EVENT_NO_FACE;
 						mUIHandler.sendMessage(reg);
 					}
-					error1 = engine1.AFR_FSDK_UninitialEngine();
-					Log.d("com.arcsoft", "AFR_FSDK_UninitialEngine : " + error1.getCode());
-				} else {
-					Message reg = Message.obtain();
-					reg.what = MSG_CODE;
-					reg.arg1 = MSG_EVENT_NO_FACE;
-					mUIHandler.sendMessage(reg);
+					err = engine.AFD_FSDK_UninitialFaceEngine();
+					Log.d(TAG, "AFD_FSDK_UninitialFaceEngine =" + err.getCode());
+					/****for arc sdk****/
 				}
-				err = engine.AFD_FSDK_UninitialFaceEngine();
-				Log.d(TAG, "AFD_FSDK_UninitialFaceEngine =" + err.getCode());
 			}
 		});
 		view.start();
 
+	}
+
+	protected void registerDraw(List<Rect> rect){
+		while (mSurfaceHolder != null) {
+			Canvas canvas = mSurfaceHolder.lockCanvas();
+			if (canvas != null) {
+				Paint mPaint = new Paint();
+				boolean fit_horizontal = canvas.getWidth() / (float)src.width() < canvas.getHeight() / (float)src.height() ? true : false;
+				float scale = 1.0f;
+				if (fit_horizontal) {
+					scale = canvas.getWidth() / (float)src.width();
+					dst.left = 0;
+					dst.top = (canvas.getHeight() - (int)(src.height() * scale)) / 2;
+					dst.right = dst.left + canvas.getWidth();
+					dst.bottom = dst.top + (int)(src.height() * scale);
+				} else {
+					scale = canvas.getHeight() / (float)src.height();
+					dst.left = (canvas.getWidth() - (int)(src.width() * scale)) / 2;
+					dst.top = 0;
+					dst.right = dst.left + (int)(src.width() * scale);
+					dst.bottom = dst.top + canvas.getHeight();
+				}
+				canvas.drawBitmap(mBitmap, src, dst, mPaint);
+				canvas.save();
+				canvas.scale((float) dst.width() / (float) src.width(), (float) dst.height() / (float) src.height());
+				canvas.translate(dst.left / scale, dst.top / scale);
+
+
+				for (Rect mrect : rect) {
+					mPaint.setColor(Color.RED);
+					mPaint.setStrokeWidth(10.0f);
+					mPaint.setStyle(Paint.Style.STROKE);
+					canvas.drawRect(mrect, mPaint);
+				}
+
+				canvas.restore();
+				mSurfaceHolder.unlockCanvasAndPost(canvas);
+				break;
+			}
+		}
 	}
 
 	/**
@@ -264,6 +319,7 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 					mExtImageView = (ExtImageView) layout.findViewById(R.id.extimageview);
 					mExtImageView.setImageBitmap((Bitmap) msg.obj);
 					final Bitmap face = (Bitmap) msg.obj;
+
 					new AlertDialog.Builder(RegisterActivity.this)
 							.setTitle("请输入注册名字")
 							.setIcon(android.R.drawable.ic_dialog_info)
@@ -271,7 +327,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 							.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 								@Override
 								public void onClick(DialogInterface dialog, int which) {
-									((Application)RegisterActivity.this.getApplicationContext()).mFaceDB.addFace(mEditText.getText().toString(), mAFR_FSDKFace);
+									((Application)RegisterActivity.this.getApplicationContext()).mPersonFaceDB.addFace(mEditText.getText().toString(),mPerson,face);
+									//((Application)RegisterActivity.this.getApplicationContext()).mFaceDB.addFace(mEditText.getText().toString(), mAFR_FSDKFace);
 									mRegisterViewAdapter.notifyDataSetChanged();
 									dialog.dismiss();
 								}
@@ -314,7 +371,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 		@Override
 		public int getCount() {
 			// TODO Auto-generated method stub
-			return ((Application)mContext.getApplicationContext()).mFaceDB.mRegister.size();
+			//return ((Application)mContext.getApplicationContext()).mFaceDB.mRegister.size();
+			return ((Application)mContext.getApplicationContext()).mPersonFaceDB.mRegister.size();
 		}
 
 		@Override
@@ -343,10 +401,16 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 				convertView.setTag(holder);
 			}
 
-			if (!((Application)mContext.getApplicationContext()).mFaceDB.mRegister.isEmpty()) {
-				FaceDB.FaceRegist face = ((Application) mContext.getApplicationContext()).mFaceDB.mRegister.get(position);
+//			if (!((Application)mContext.getApplicationContext()).mFaceDB.mRegister.isEmpty()) {
+//				FaceDB.FaceRegist face = ((Application) mContext.getApplicationContext()).mFaceDB.mRegister.get(position);
+//				holder.tv.setText(face.mName);
+//				//holder.siv.setImageResource(R.mipmap.ic_launcher);
+//				convertView.setWillNotDraw(false);
+//			}
+
+			if (!((Application)mContext.getApplicationContext()).mPersonFaceDB.mRegister.isEmpty()) {
+				PersonFaceDB.FaceRegist face = ((Application) mContext.getApplicationContext()).mPersonFaceDB.mRegister.get(position);
 				holder.tv.setText(face.mName);
-				//holder.siv.setImageResource(R.mipmap.ic_launcher);
 				convertView.setWillNotDraw(false);
 			}
 
@@ -365,7 +429,8 @@ public class RegisterActivity extends Activity implements SurfaceHolder.Callback
 					.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
-							((Application)mContext.getApplicationContext()).mFaceDB.delete(name);
+							((Application)mContext.getApplicationContext()).mPersonFaceDB.delete(name);
+							//((Application)mContext.getApplicationContext()).mFaceDB.delete(name);
 							mRegisterViewAdapter.notifyDataSetChanged();
 							dialog.dismiss();
 						}
